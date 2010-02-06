@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+	android:id="@+id/keyboard"
+    android:orientation="vertical"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    >
+
+	<!-- not quite sure why i need this LinearLayout -->
+	<LinearLayout android:id="@+id/voicemail_dial_delete"
+		android:orientation="vertical"
+		android:layout_width="fill_parent"
+		android:layout_height="wrap_content"
+		android:layout_alignParentBottom="true">
+      <include layout="@layout/dial_digits_delete" />
+	</LinearLayout>
+
+    <TextView android:id="@+id/number"
+    	android:layout_width="fill_parent"
+    	android:layout_height="40sp"
+    	android:maxLines="1"
+    	android:textSize="32sp"
+    	android:phoneNumber="true"
+    	android:layout_alignParentTop="true" />
+    	
+	<ListView android:id="@+id/contactlist"
+ 		android:layout_width="fill_parent"
+    	android:layout_height="fill_parent"
+    	android:layout_above="@id/voicemail_dial_delete"
+    	android:layout_below="@id/number" />
+
+	<TableLayout android:id="@+id/keypad"
+		android:layout_width="fill_parent"
+    	android:layout_height="fill_parent"
+	    android:paddingLeft="16px"
+    	android:paddingRight="16px"
+    	android:visibility="gone">
+
+	    <TableRow>
+            <ImageButton android:id="@+id/button1"
+                android:layout_width="96px"
+                android:layout_height="76px"
+                android:src="@drawable/dial_num_1_no_vm"
+                android:background="@drawable/btn_dial" />
+            <ImageButton android:id="@+id/button2"
+                android:layout_width="96px"
+                android:layout_height="76px"
+                android:src="@drawable/dial_num_2"
+                android:background="@drawable/btn_dial" />
+            <ImageButton android:id="@+id/button3"
+                android:layout_width="96px"
+                android:layout_height="76px"
+                android:src="@drawable/dial_num_3"
+                android:background="@drawable/btn_dial" />
+        </TableRow>
+	    <TableRow>
+            <ImageButton android:id="@+id/button4"
+                android:layout_width="96px"
+                android:layout_height="76px"
+                android:src="@drawable/dial_num_4"
+                android:background="@drawable/btn_dial" />
+            <ImageButton android:id="@+id/button5"
+                android:layout_width="96px"
+                android:layout_height="76px"
+                android:src="@drawable/dial_num_5"
+                android:background="@drawable/btn_dial" />
+            <ImageButton android:id="@+id/button6"
+                android:layout_width="96px"
+                android:layout_height="76px"
+                android:src="@drawable/dial_num_6"
+                android:background="@drawable/btn_dial" />
+        </TableRow>
+	    <TableRow>
+            <ImageButton android:id="@+id/button7"
+                android:layout_width="96px"
+                android:layout_height="76px"
+                android:src="@drawable/dial_num_7"
+                android:background="@drawable/btn_dial" />
+            <ImageButton android:id="@+id/button8"
+                android:layout_width="96px"
+                android:layout_height="76px"
+                android:src="@drawable/dial_num_8"
+                android:background="@drawable/btn_dial" />
+            <ImageButton android:id="@+id/button9"
+                android:layout_width="96px"
+                android:layout_height="76px"
+                android:src="@drawable/dial_num_9"
+                android:background="@drawable/btn_dial" />
+        </TableRow>
+	    <TableRow>
+            <ImageButton android:id="@+id/buttonstar"
+                android:layout_width="96px"
+                android:layout_height="76px"
+                android:src="@drawable/dial_num_star"
+                android:background="@drawable/btn_dial" />
+            <ImageButton android:id="@+id/button0"
+                android:layout_width="96px"
+                android:layout_height="76px"
+                android:src="@drawable/dial_num_0"
+                android:background="@drawable/btn_dial" />
+            <ImageButton android:id="@+id/buttonpound"
+                android:layout_width="96px"
+                android:layout_height="76px"
+                android:src="@drawable/dial_num_pound"
+                android:background="@drawable/btn_dial" />
+        </TableRow>
+	</TableLayout>
+</RelativeLayout>
