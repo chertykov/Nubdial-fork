@@ -128,8 +128,6 @@ public class PhoneSpellDialer extends Activity implements OnClickListener, OnLon
 	private StringBuilder curFilter;
 	private ContactListAdapter myAdapter;
 	private ListView myContactList;
-	private TextView myTextView;
-
 	
 	/** Called when the activity is first created. */
 	@Override
@@ -155,8 +153,6 @@ public class PhoneSpellDialer extends Activity implements OnClickListener, OnLon
 		digitsView = (EditText) findViewById(R.id.digitsText);		
 		myContactList = (ListView) findViewById(R.id.contactlist);
 		myContactList.setAdapter(myAdapter);
-		myTextView = (TextView) findViewById(R.id.number);
-		showNumberIfNeeded();
 		setHandlers();
 		setPreferences();
 	}
@@ -239,16 +235,6 @@ public class PhoneSpellDialer extends Activity implements OnClickListener, OnLon
     	return super.onOptionsItemSelected(item);
     }
 	
-	public void showNumberIfNeeded() {
-		if (noMatches) {
-			myTextView.setVisibility(View.VISIBLE);
-			myContactList.setVisibility(View.GONE);
-		} else {  // still some contacts
-			myTextView.setVisibility(View.GONE);
-			myContactList.setVisibility(View.VISIBLE);
-		}
-	}
-	
 	private void setupButton(int id) {
 		ImageButton button = (ImageButton) findViewById(id);
 		button.setOnClickListener(this);
@@ -283,9 +269,6 @@ public class PhoneSpellDialer extends Activity implements OnClickListener, OnLon
 		
 		View keypad = findViewById(R.id.keypad);
 		keypad.setClickable(true);
-		
-		TextView number = (TextView) findViewById(R.id.number);
-		number.setClickable(true);
 	}
 	
 	/*
@@ -332,8 +315,6 @@ public class PhoneSpellDialer extends Activity implements OnClickListener, OnLon
 
 	private void updateFilter(boolean add) {
 		if (!add) {
-			if (digitsView.length() == 0)
-				return;
 			noMatches = false;
 		}
 		
@@ -373,11 +354,9 @@ public class PhoneSpellDialer extends Activity implements OnClickListener, OnLon
 		startManagingCursor(cur);
 		if (cur.getCount() == 0) {
 			noMatches = true;
-		} else {
-			myAdapter.changeCursor(cur);
-			myContactList.invalidate(); // the new filter requires we redraw
 		}
-		showNumberIfNeeded();
+		myAdapter.changeCursor(cur);
+		myContactList.invalidate(); // the new filter requires we redraw
 	}
 	
 	public void onClick(View view) {
@@ -494,6 +473,7 @@ public class PhoneSpellDialer extends Activity implements OnClickListener, OnLon
 		case R.id.button0: {
 			keyPressed(KeyEvent.KEYCODE_PLUS);
 			result = true;
+			updateFilter(true);
 			break;
 		}
 		case R.id.button1: {
@@ -576,18 +556,7 @@ public class PhoneSpellDialer extends Activity implements OnClickListener, OnLon
 		Intent i = new Intent(Intent.ACTION_VIEW);
 		i.setData(contactUri);
 		startActivity(i);
-	}
-	
-	/*
-	private final OnItemClickListener nameClickListener =
-	new OnItemClickListener() {
-		public void onItemClick(AdapterView<?> parent, View view, int position,
-				long rowid) {
-			ContactListItemCache contact = (ContactListItemCache)view.getTag();
-			startContactActivity(contact.lookupUri);
-		}
-	};
-	*/
+	}	
 	
 	public void onItemClick(AdapterView<?> parent, View view, int position,
 			long rowid) {
@@ -675,7 +644,7 @@ public class PhoneSpellDialer extends Activity implements OnClickListener, OnLon
 	}
 
 	private static char mapToPhone(char alpha) {
-		if (Character.isDigit(alpha))
+		if (Character.isDigit(alpha) || alpha == '+')
 			return alpha;
 		
 		if (alpha == ' ')

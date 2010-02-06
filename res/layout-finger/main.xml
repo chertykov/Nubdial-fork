@@ -108,13 +108,6 @@
 		android:layout_above="@id/keypad">
       <include layout="@layout/dial_digits_delete" />
 	</LinearLayout>
-	
-    <TextView android:id="@+id/number"
-    	android:layout_width="fill_parent"
-    	android:layout_height="fill_parent"
-    	android:layout_above="@id/dial_digits_delete"
-    	android:phoneNumber="true"
-    	android:visibility="gone" />
     
 	<ListView android:id="@+id/contactlist"
  		android:layout_width="fill_parent"
