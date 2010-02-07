@@ -94,9 +94,11 @@ public class PhoneSpellDialer extends Activity implements OnClickListener, OnLon
 	private static final String TAG = "SpellDial";
 	
 	// Identifiers for our menu items.
-    private static final int SETTINGS_ID = Menu.FIRST;
-    private static final int ABOUT_ID = Menu.FIRST + 1;
-	
+	private static final int CALL_LOG = 0;
+	private static final int CONTACTS = 1;
+	private static final int FAVOURITES = 2;
+    private static final int SETTINGS_ID = 3;
+    
     // Dialogs we pop up.
     private static final int DIALOG_ABOUT = 0;
 
@@ -108,7 +110,7 @@ public class PhoneSpellDialer extends Activity implements OnClickListener, OnLon
     private static final int TONE_RELATIVE_VOLUME = 80;
     private static final int DIAL_TONE_STREAM_TYPE = AudioManager.STREAM_MUSIC;
     
-	private static boolean mDTMFToneEnabled, matchedItalics, matchedBold, matchedDigits, matchedHighlight, noMatches = false;
+	private static boolean matchAnywhere, mDTMFToneEnabled, matchedItalics, matchedBold, matchedDigits, matchedHighlight, noMatches = false;
 	private Vibrator mVibrator;
     private boolean prefVibrateOn;
     private long[] mVibratePattern;
@@ -140,7 +142,7 @@ public class PhoneSpellDialer extends Activity implements OnClickListener, OnLon
 		setContentView(R.layout.main);
 		
 		contactAccessor = ContactAccessor.getInstance(getContentResolver());
-		Cursor cur = contactAccessor.recalculate("");
+		Cursor cur = contactAccessor.recalculate("", matchAnywhere);
 		startManagingCursor(cur);
 		myAdapter = new ContactListAdapter(this, cur, contactAccessor.getContactSplit());
 		curFilter = new StringBuilder();
@@ -168,6 +170,7 @@ public class PhoneSpellDialer extends Activity implements OnClickListener, OnLon
 		matchedDigitsColor = new ForegroundColorSpan(Integer.parseInt(prefs.getString("matched_colour_choice", "-16777216")));
 		matchedHighlight = prefs.getBoolean("matched_highlight", true);
 		matchedHighlightColor = new BackgroundColorSpan(Integer.parseInt(prefs.getString("matched_highlight_choice", "-3355444")));
+		matchAnywhere = prefs.getBoolean("match_num_sequence", true);
 		initVibrationPattern();
 		setDigitsColor(prefs);
 	}
@@ -176,6 +179,10 @@ public class PhoneSpellDialer extends Activity implements OnClickListener, OnLon
     public boolean onCreateOptionsMenu(Menu menu) {
     	super.onCreateOptionsMenu(menu);
     	
+    	
+    	//menu.add(0, CALL_LOG, 0, R.string.menu_call_log).setIcon(R.drawable.ic_tab_unselected_recent);
+    	menu.add(0, CONTACTS, 0, R.string.menu_contacts).setIcon(R.drawable.ic_tab_unselected_contacts);
+    	//menu.add(0, FAVOURITES, 0, R.string.menu_favs).setIcon(R.drawable.ic_tab_unselected_starred);
     	// Consider using XML!
         menu.add(0, SETTINGS_ID, 0, R.string.menu_settings)
                 .setIcon(android.R.drawable.ic_menu_preferences);
@@ -227,9 +234,13 @@ public class PhoneSpellDialer extends Activity implements OnClickListener, OnLon
         			this, Preferences.class);            
             startActivity(launchPreferencesIntent);
         	break;
-
-        case ABOUT_ID:
-        	showDialog(DIALOG_ABOUT);
+        	
+        case CALL_LOG:
+        	startActivity(contactAccessor.getCallLogIntent());
+        	break;
+        	
+        case CONTACTS:
+        	startActivity(contactAccessor.getContactsIntent());
         	break;
     	}
     	return super.onOptionsItemSelected(item);
@@ -337,7 +348,7 @@ public class PhoneSpellDialer extends Activity implements OnClickListener, OnLon
 	private void doCall() {
 		Intent i = new Intent(Intent.ACTION_CALL);
 		// if it was a long press do something else?
-		i.setData(Uri.parse("tel://" + digitsView.toString()));
+		i.setData(Uri.parse("tel://" + digitsView.getText().toString()));
 		startActivity(i);
 	}
 
@@ -345,10 +356,10 @@ public class PhoneSpellDialer extends Activity implements OnClickListener, OnLon
 		Cursor cur;		
 		int hashIndex = curFilter.indexOf("#");
 		if (hashIndex == -1) {
-			cur = contactAccessor.recalculate(curFilter.toString());
+			cur = contactAccessor.recalculate(curFilter.toString(), matchAnywhere);
 		} else {
 			String s = curFilter.toString().replace('#', ' ');
-			cur = contactAccessor.recalculate(s);
+			cur = contactAccessor.recalculate(s, matchAnywhere);
 		}
 
 		startManagingCursor(cur);
@@ -675,6 +686,7 @@ public class PhoneSpellDialer extends Activity implements OnClickListener, OnLon
 		String n = name.toString();
 		int result = -1;		
 		int k = 0;
+		boolean match = true;
 		
 		offsets.add(k);		
 		while (true) {
@@ -685,8 +697,7 @@ public class PhoneSpellDialer extends Activity implements OnClickListener, OnLon
 				break;				
 		}
 		
-		for (int j = 0; j < offsets.size(); j++) {
-			boolean match = true;			
+		for (int j = 0; j < offsets.size(); j++) {			
 			for (int i = offsets.get(j); i < name.length(); i++) {
 				if (mapToPhone(name.charAt(i)) == pattern.charAt(0)) {
 					result = i;
@@ -704,6 +715,29 @@ public class PhoneSpellDialer extends Activity implements OnClickListener, OnLon
 				break;
 			}			
 		}
+		
+		//Wysie: If all the above fail, check if it's matchAnywhere
+		if (!match && matchAnywhere) {
+			int length = name.length() - pattern.length() + 1;
+			for (int j = 0; j < length; j++) {
+				if (name.charAt(j) == pattern.charAt(0)) {
+					match = true;
+					for (int i = 0; i < pattern.length(); i++) {
+						if (name.charAt(j+i) != pattern.charAt(i)) {
+							match = false;
+							result = -1;
+							break;
+						}
+					}
+				}
+				
+				if (match) {
+					result = j;
+					break;
+				}
+			}
+		}		
+		
 		return result;
 	}
 

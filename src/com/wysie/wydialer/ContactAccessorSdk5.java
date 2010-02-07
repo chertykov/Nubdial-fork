@@ -2,6 +2,7 @@ package com.wysie.wydialer;
 
 import android.content.ContentResolver;
 import android.content.ContentUris;
+import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
 import android.provider.ContactsContract.Contacts;
@@ -18,6 +19,19 @@ final class ContactAccessorSdk5 extends ContactAccessor {
 	@Override
 	public IContactSplit getContactSplit() {
 		return myContactSplit;
+	}
+	
+	@Override
+	public Intent getContactsIntent() {
+		Intent i = new Intent();
+		i.setAction(Intent.ACTION_VIEW);
+		i.setData(android.provider.ContactsContract.Contacts.CONTENT_URI);
+		return i;
+	}
+	
+	@Override
+	public Intent getFavouritesIntent() {
+		return null;
 	}
 
 	private static final String[] PHONE_PROJECTION = new String[] {
@@ -92,8 +106,15 @@ final class ContactAccessorSdk5 extends ContactAccessor {
 		Contacts._ID, Contacts.LOOKUP_KEY, Contacts.DISPLAY_NAME, Phone.NUMBER, Phone.TYPE, Phone.LABEL };
 	
 	@Override
-	public Cursor recalculate(String filter) {
-		String[] args = new String[] { filter + "*", "*[ ]" + filter + "*", filter + "*" };
+	public Cursor recalculate(String filter, boolean matchAnywhere) {
+		String[] args = null;
+		if (matchAnywhere) {
+			args = new String[] { filter + "*", "*[ ]" + filter + "*", "*" + filter + "*" };
+		}
+		else {
+			args = new String[] { filter + "*", "*[ ]" + filter + "*", filter + "*" };
+		}
+		
 		return myContentResolver.query(Phone.CONTENT_URI, PEOPLE_PHONE_PROJECTION, peopleSql, args, PEOPLE_SORT);
 		//return myContentResolver.query(Contacts.CONTENT_URI, PEOPLE_PROJECTION, peopleSql, args, PEOPLE_SORT);
 	}

@@ -98,7 +98,14 @@
 		android:entries="@array/digits_colors"
 		android:entryValues="@array/digits_colors_values"
 		android:defaultValue="-3355444"
-		android:dependency="matched_highlight" />	
+		android:dependency="matched_highlight" />
+		
+	<CheckBoxPreference
+    	android:key="match_num_sequence"
+        android:title="@string/title_match_num_seq"
+        android:summaryOn="@string/summaryon_match_num_seq"
+        android:summaryOff="@string/summaryoff_match_num_seq"
+		android:defaultValue="false" />
 	</PreferenceCategory>
 	<PreferenceCategory android:title="@string/title_misc_category">
         <PreferenceScreen

@@ -1,6 +1,7 @@
 package com.wysie.wydialer;
 
 import android.content.ContentResolver;
+import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
 import android.provider.Contacts;
@@ -12,7 +13,21 @@ final class ContactAccessorSdk3_4 extends ContactAccessor {
 	
 	public ContactAccessorSdk3_4() {
 		myContactSplit = new MyContactSplit();
+	}	
+	
+	@Override
+	public Intent getContactsIntent() {
+		Intent i = new Intent();
+		i.setAction(Intent.ACTION_VIEW);
+		i.setData(android.provider.Contacts.CONTENT_URI);
+		return i;
 	}
+	
+	@Override
+	public Intent getFavouritesIntent() {
+		return null;
+	}
+
 	
 	class MyContactSplit implements IContactSplit {
 		@Override
@@ -52,7 +67,7 @@ final class ContactAccessorSdk3_4 extends ContactAccessor {
             Contacts.People.LABEL, Contacts.People.NAME, };
 	
 	@Override
-	public Cursor recalculate(String filter) {
+	public Cursor recalculate(String filter, boolean matchAnywhere) {
         String[] args = new String[] { filter + "*","*[ ]" + filter + "*" };
         return myContentResolver.query(People.CONTENT_URI, PEOPLE_PROJECTION,
         		peopleSql, args, Contacts.People.DEFAULT_SORT_ORDER);

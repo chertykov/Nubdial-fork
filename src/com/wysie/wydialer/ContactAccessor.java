@@ -36,14 +36,24 @@
 package com.wysie.wydialer;
 
 import android.content.ContentResolver;
+import android.content.Intent;
 import android.database.Cursor;
 import android.os.Build;
 
 abstract class ContactAccessor {
-	public abstract Cursor recalculate(String filter);
+	public abstract Cursor recalculate(String filter, boolean matchNumAnywhere);
 	public abstract IContactSplit getContactSplit();
+	public abstract Intent getContactsIntent();
+	public abstract Intent getFavouritesIntent();
 	
 	public abstract void setContentResolver(ContentResolver cr);
+	
+	public Intent getCallLogIntent() {
+		Intent i = new Intent();
+		i.setAction(Intent.ACTION_VIEW);
+		i.setData(android.provider.CallLog.CONTENT_URI);
+		return i;
+	}
 	
     /**
      * Static singleton instance of {@link ContactAccessor} holding the
