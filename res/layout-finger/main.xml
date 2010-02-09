@@ -112,6 +112,7 @@
 	<ListView android:id="@+id/contactlist"
  		android:layout_width="fill_parent"
     	android:layout_height="fill_parent"
-    	android:layout_above="@id/dial_digits_delete" />
+    	android:layout_above="@id/dial_digits_delete"
+    	android:fastScrollEnabled="true" />
 
 </RelativeLayout>

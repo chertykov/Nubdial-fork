@@ -45,14 +45,13 @@ abstract class ContactAccessor {
 	public abstract IContactSplit getContactSplit();
 	public abstract Intent getContactsIntent();
 	public abstract Intent getFavouritesIntent();
-	
+	public abstract Intent addToContacts(String number);	
 	public abstract void setContentResolver(ContentResolver cr);
 	
 	public Intent getCallLogIntent() {
-		Intent i = new Intent();
-		i.setAction(Intent.ACTION_VIEW);
-		i.setData(android.provider.CallLog.CONTENT_URI);
-		return i;
+	    Intent  intent = new Intent(Intent.ACTION_VIEW, null);
+        intent.setType("vnd.android.cursor.dir/calls");
+        return intent;
 	}
 	
     /**

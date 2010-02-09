@@ -43,14 +43,15 @@
 package com.wysie.wydialer;
 
 import android.app.Activity;
-import android.app.AlertDialog;
-import android.app.Dialog;
+import android.content.ContentUris;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.ColorStateList;
 import android.content.res.Resources;
 import android.database.Cursor;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.media.AudioManager;
@@ -59,9 +60,9 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Vibrator;
 import android.preference.PreferenceManager;
-import android.provider.Settings;
-import android.provider.ContactsContract.Contacts;
+import android.provider.ContactsContract.Data;
 import android.provider.ContactsContract.CommonDataKinds.Phone;
+import android.provider.ContactsContract.CommonDataKinds.Photo;
 import android.telephony.PhoneNumberFormattingTextWatcher;
 import android.text.method.DialerKeyListener;
 import android.text.Spannable;
@@ -70,6 +71,7 @@ import android.text.style.BackgroundColorSpan;
 import android.text.style.ForegroundColorSpan;
 import android.text.style.StyleSpan;
 import android.util.Log;
+import android.view.ContextMenu;
 import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -81,36 +83,37 @@ import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.ListView;
+import android.widget.QuickContactBadge;
 import android.widget.TextView;
+import android.widget.AdapterView.AdapterContextMenuInfo;
 import android.widget.AdapterView.OnItemClickListener;
-import android.widget.AdapterView.OnItemLongClickListener;
 import android.widget.ResourceCursorAdapter;
+import android.view.ContextMenu.ContextMenuInfo;
 import android.view.View.OnClickListener;
+import android.view.View.OnCreateContextMenuListener;
 import android.view.View.OnLongClickListener;
 
 import java.util.ArrayList;
-
-public class PhoneSpellDialer extends Activity implements OnClickListener, OnLongClickListener, OnItemClickListener {
+public class PhoneSpellDialer extends Activity implements OnClickListener, OnLongClickListener, /* OnCreateContextMenuListener, */ OnItemClickListener {
 	private static final String TAG = "SpellDial";
 	
 	// Identifiers for our menu items.
-	private static final int CALL_LOG = 0;
-	private static final int CONTACTS = 1;
-	private static final int FAVOURITES = 2;
-    private static final int SETTINGS_ID = 3;
+	private static final int ADD_TO_CONTACTS = 0;
+	private static final int CALL_LOG = 1;
+	private static final int CONTACTS = 2;
+	private static final int FAVOURITES = 3;
+    private static final int SETTINGS_ID = 4;
     
-    // Dialogs we pop up.
-    private static final int DIALOG_ABOUT = 0;
-
-	private static final boolean LOG = true;
-	
+    //Identifiers for context menus
+    private static final int SMS = 0;
+    	
 	private ToneGenerator mToneGenerator;
     private Object mToneGeneratorLock = new Object();
     private static final int TONE_LENGTH_MS = 150;
     private static final int TONE_RELATIVE_VOLUME = 80;
     private static final int DIAL_TONE_STREAM_TYPE = AudioManager.STREAM_MUSIC;
     
-	private static boolean matchAnywhere, mDTMFToneEnabled, matchedItalics, matchedBold, matchedDigits, matchedHighlight, noMatches = false;
+	private static boolean showContactPictures, matchAnywhere, mDTMFToneEnabled, matchedItalics, matchedBold, matchedDigits, matchedHighlight, noMatches = false;
 	private Vibrator mVibrator;
     private boolean prefVibrateOn;
     private long[] mVibratePattern;
@@ -126,6 +129,7 @@ public class PhoneSpellDialer extends Activity implements OnClickListener, OnLon
 	private EditText digitsView;
 	private ImageButton dialButton, deleteButton;
 	private ContactAccessor contactAccessor;
+	private MenuItem mAddToContacts;
 	
 	private StringBuilder curFilter;
 	private ContactListAdapter myAdapter;
@@ -134,7 +138,6 @@ public class PhoneSpellDialer extends Activity implements OnClickListener, OnLon
 	/** Called when the activity is first created. */
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
-		if (LOG) Log.d(TAG, "got onCreate");
 		super.onCreate(savedInstanceState);
 		
         PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
@@ -154,6 +157,7 @@ public class PhoneSpellDialer extends Activity implements OnClickListener, OnLon
 		deleteButton = (ImageButton) findViewById(R.id.deleteButton);
 		digitsView = (EditText) findViewById(R.id.digitsText);		
 		myContactList = (ListView) findViewById(R.id.contactlist);
+		myContactList.setOnCreateContextMenuListener(this);
 		myContactList.setAdapter(myAdapter);
 		setHandlers();
 		setPreferences();
@@ -171,6 +175,7 @@ public class PhoneSpellDialer extends Activity implements OnClickListener, OnLon
 		matchedHighlight = prefs.getBoolean("matched_highlight", true);
 		matchedHighlightColor = new BackgroundColorSpan(Integer.parseInt(prefs.getString("matched_highlight_choice", "-3355444")));
 		matchAnywhere = prefs.getBoolean("match_num_sequence", true);
+		showContactPictures = prefs.getBoolean("show_contact_pictures", true);
 		initVibrationPattern();
 		setDigitsColor(prefs);
 	}
@@ -178,9 +183,8 @@ public class PhoneSpellDialer extends Activity implements OnClickListener, OnLon
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
     	super.onCreateOptionsMenu(menu);
-    	
-    	
-    	//menu.add(0, CALL_LOG, 0, R.string.menu_call_log).setIcon(R.drawable.ic_tab_unselected_recent);
+    	mAddToContacts = menu.add(0, ADD_TO_CONTACTS, 0, R.string.menu_new_contacts).setIcon(android.R.drawable.ic_menu_add);
+    	menu.add(0, CALL_LOG, 0, R.string.menu_call_log).setIcon(R.drawable.ic_tab_unselected_recent);
     	menu.add(0, CONTACTS, 0, R.string.menu_contacts).setIcon(R.drawable.ic_tab_unselected_contacts);
     	//menu.add(0, FAVOURITES, 0, R.string.menu_favs).setIcon(R.drawable.ic_tab_unselected_starred);
     	// Consider using XML!
@@ -188,6 +192,18 @@ public class PhoneSpellDialer extends Activity implements OnClickListener, OnLon
                 .setIcon(android.R.drawable.ic_menu_preferences);
         
     	return true;
+    }
+    
+    @Override
+    public boolean onPrepareOptionsMenu(Menu menu) {
+    	if (digitsView.length() == 0) {
+    		mAddToContacts.setTitle(R.string.menu_new_contacts);
+    	}
+    	else {
+    		mAddToContacts.setTitle(R.string.menu_add_contacts);
+    	}
+
+        return true;
     }
     
     @Override
@@ -226,9 +242,34 @@ public class PhoneSpellDialer extends Activity implements OnClickListener, OnLon
         }
     }
     
+    /*
+    @Override
+    public void onCreateContextMenu(ContextMenu menu, View view, ContextMenuInfo menuInfo) {
+    	menu.add(0, SMS, 0, R.string.context_sms);
+    }
+    
+    @Override
+    public boolean onContextItemSelected(MenuItem item) {
+    	  AdapterContextMenuInfo info = (AdapterContextMenuInfo) item.getMenuInfo();
+    	  switch (item.getItemId()) {
+    	  case SMS:
+    	    //Todo: SMS
+    		  Cursor cursor = (Cursor)myAdapter.getItem(info.position);
+    		  
+    	    return true;
+    	  default:
+    	    return super.onContextItemSelected(item);
+    	  }
+    }
+    */
+    
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
     	switch (item.getItemId()) {
+    	case ADD_TO_CONTACTS:
+        	startActivity(contactAccessor.addToContacts(digitsView.getText().toString()));
+    		break;
+    	
         case SETTINGS_ID:
         	Intent launchPreferencesIntent = new Intent().setClass(
         			this, Preferences.class);            
@@ -354,13 +395,17 @@ public class PhoneSpellDialer extends Activity implements OnClickListener, OnLon
 
 	private void recalculate() {
 		Cursor cur;		
-		int hashIndex = curFilter.indexOf("#");
-		if (hashIndex == -1) {
-			cur = contactAccessor.recalculate(curFilter.toString(), matchAnywhere);
-		} else {
-			String s = curFilter.toString().replace('#', ' ');
-			cur = contactAccessor.recalculate(s, matchAnywhere);
+		String s = curFilter.toString();
+		
+		if (s.indexOf("#") != -1) {
+			s = s.replace('#', ' ');
 		}
+		
+		if (s.indexOf('-') != -1) {
+			s = s.replaceAll("-", "");
+		}
+		
+		cur = contactAccessor.recalculate(s, matchAnywhere);
 
 		startManagingCursor(cur);
 		if (cur.getCount() == 0) {
@@ -472,7 +517,6 @@ public class PhoneSpellDialer extends Activity implements OnClickListener, OnLon
 		case R.id.name: {
 			Uri lookupUri = (Uri)view.getTag();
 			startContactActivity(lookupUri);
-			Log.d("HERE HERE", "HERE");
 		}
 		}
 		toggleDrawable();
@@ -574,23 +618,15 @@ public class PhoneSpellDialer extends Activity implements OnClickListener, OnLon
 		ContactListItemCache contact = (ContactListItemCache)view.getTag();
 		startContactActivity(contact.lookupUri);
 	}
-	
-	/*
-	private final OnItemLongClickListener nameLongClickListener =
-	new OnItemLongClickListener() {
-		public boolean onItemLongClick(AdapterView<?> parent, View view,
-				int position, long rowid) {
-			return true;
-		}
-	};
-	*/
 
 	private class ContactListAdapter extends ResourceCursorAdapter {
 		IContactSplit contactSplit;
+		private Context mContext;
 		
 		public ContactListAdapter(Context context, Cursor cur, IContactSplit ics) {
-			super(context, R.layout.contacts_list_item, cur, false);
+			super(context, R.layout.recent_calls_list_item, cur, false);
 			contactSplit = ics;
+			mContext = context;
 		}
 
 		@Override
@@ -607,6 +643,9 @@ public class PhoneSpellDialer extends Activity implements OnClickListener, OnLon
             }
             cache.labelView = (TextView) view.findViewById(R.id.label);
             cache.dataView = (TextView) view.findViewById(R.id.data);
+            cache.photoView = (QuickContactBadge) view.findViewById(R.id.photo);
+            cache.nonQuickContactPhotoView = (ImageView) view.findViewById(R.id.noQuickContactPhoto);
+            
             view.setTag(cache);
 
             return view;
@@ -620,11 +659,12 @@ public class PhoneSpellDialer extends Activity implements OnClickListener, OnLon
 			final int PHONE_NUMBER_INDEX = 3;
 			final int PHONE_TYPE_INDEX = 4;
 			final int PHONE_LABEL_INDEX = 5;
+			final int PHOTO_ID_INDEX = 6;
 			
             // Set the name
             final String name = cursor.getString(DISPLAY_NAME_INDEX);         	
             cache.nameView.setText(name, TextView.BufferType.SPANNABLE);
-            highlightName((Spannable) cache.nameView.getText(), digitsView.getText().toString());
+            highlightName((Spannable) cache.nameView.getText(), digitsView.getText().toString(), false);
             
             if (!cursor.isNull(PHONE_TYPE_INDEX)) {
                 cache.labelView.setVisibility(View.VISIBLE);
@@ -639,20 +679,73 @@ public class PhoneSpellDialer extends Activity implements OnClickListener, OnLon
             
             final String number = cursor.getString(PHONE_NUMBER_INDEX);
             cache.dataView.setText(number, TextView.BufferType.SPANNABLE);
-            highlightName((Spannable) cache.dataView.getText(), digitsView.getText().toString());
+            highlightName((Spannable) cache.dataView.getText(), digitsView.getText().toString(), true);
             
             cache.callButton.setTag(number);
+            Uri lookupUri = contactSplit.getLookupUri(cursor);
+            cache.lookupUri = lookupUri;
             
-            cache.lookupUri = contactSplit.getLookupUri(cursor);
+            if (showContactPictures) {
+            cache.photoView.assignContactUri(lookupUri);
+            cache.photoView.setVisibility(View.VISIBLE);
+            cache.nonQuickContactPhotoView.setVisibility(View.INVISIBLE);
+
+            long photoId = -1;
             
+            if (!cursor.isNull(PHOTO_ID_INDEX)) {
+                photoId = cursor.getLong(PHOTO_ID_INDEX);
+            }
+            
+            //Reference: http://thinkandroid.wordpress.com/2009/12/30/handling-contact-photos-all-api-levels/
+            Bitmap photo = null;            
+            if (photoId != -1) {
+            	photo = loadContactPhoto(mContext, photoId, null);
+            }
+ 
+            if (photo != null) {
+            	cache.photoView.setImageBitmap(photo);
+            }
+            else {
+            	cache.photoView.setImageResource(R.drawable.ic_contact_list_picture);
+            }
+            }
+            else {
+            	cache.photoView.setVisibility(View.GONE);
+            	cache.nonQuickContactPhotoView.setVisibility(View.GONE);
+            }
+
 		}
 
 		@Override
 		public String convertToString(Cursor cursor) {
-			Log.d(TAG, "convertToString called?!");
 			return cursor.getString(2);
 		}
 	}
+	
+    public static Bitmap loadContactPhoto(Context context, long photoId,
+            BitmapFactory.Options options) {
+        Cursor photoCursor = null;
+        Bitmap photoBm = null;
+
+        try {
+            photoCursor = context.getContentResolver().query(
+                    ContentUris.withAppendedId(Data.CONTENT_URI, photoId),
+                    new String[] { Photo.PHOTO },
+                    null, null, null);
+
+            if (photoCursor.moveToFirst() && !photoCursor.isNull(0)) {
+                byte[] photoData = photoCursor.getBlob(0);
+                photoBm = BitmapFactory.decodeByteArray(photoData, 0,
+                        photoData.length, options);
+            }
+        } finally {
+            if (photoCursor != null) {
+                photoCursor.close();
+            }
+        }
+
+        return photoBm;
+    }
 
 	private static char mapToPhone(char alpha) {
 		if (Character.isDigit(alpha) || alpha == '+')
@@ -681,14 +774,21 @@ public class PhoneSpellDialer extends Activity implements OnClickListener, OnLon
 	 * no next match.
 	 */
 	
-	private static int nextMatch(Spannable name, String pattern) {
+	private static int[] nextMatch(Spannable name, String pattern, boolean isNumber) {
 		ArrayList<Integer> offsets = new ArrayList<Integer>();		
-		String n = name.toString();
-		int result = -1;		
+		String n = name.toString();		
 		int k = 0;
 		boolean match = true;
 		
-		offsets.add(k);		
+		if (isNumber) {
+			pattern = pattern.replaceAll("-", "");
+		}
+		
+		int[] result = new int[2];
+		result[0] = -1; //start index of pattern matching
+		result[1] = pattern.length(); //end index of pattern matching
+		
+		offsets.add(k);
 		while (true) {
 			k = n.indexOf(" ", k+1);
 			if (k != -1)
@@ -697,47 +797,66 @@ public class PhoneSpellDialer extends Activity implements OnClickListener, OnLon
 				break;				
 		}
 		
-		for (int j = 0; j < offsets.size(); j++) {			
-			for (int i = offsets.get(j); i < name.length(); i++) {
-				if (mapToPhone(name.charAt(i)) == pattern.charAt(0)) {
-					result = i;
-					break;
+		for (int j = 0; j < offsets.size(); j++) {
+			
+			if (mapToPhone(name.charAt(offsets.get(j))) == pattern.charAt(0)) {
+				match = true;
+				result[0] = offsets.get(j);
+			}
+			
+			if (match) {
+				int currPos = offsets.get(j);
+				for (int i = 0; i < pattern.length(); i++) {
+					if (mapToPhone(name.charAt(currPos)) != pattern.charAt(i)) {
+						if (name.charAt(currPos) == '-') {
+							result[1]++;
+							i--;
+						}
+						else {
+							match = false;
+							result[0] = -1;
+							break;
+						}
+					}
+					currPos++;
 				}
-			}			
-			for (int i = 0; i < pattern.length(); i++) {
-				if (mapToPhone(name.charAt(offsets.get(j)+i)) != pattern.charAt(i)) {
-					match = false;
-					result = -1;
-					break;
-				}
-			}			
+			}
+			
 			if (match) {
 				break;
 			}			
 		}
 		
-		//Wysie: If all the above fail, check if it's matchAnywhere
-		if (!match && matchAnywhere) {
+		//Wysie: If all the above fail, check if it's matchAnywhere iff it's a number
+		if (!match && matchAnywhere && isNumber) {
 			int length = name.length() - pattern.length() + 1;
 			for (int j = 0; j < length; j++) {
 				if (name.charAt(j) == pattern.charAt(0)) {
 					match = true;
+					int currPos = j;
 					for (int i = 0; i < pattern.length(); i++) {
-						if (name.charAt(j+i) != pattern.charAt(i)) {
-							match = false;
-							result = -1;
-							break;
+						if (name.charAt(currPos) != pattern.charAt(i)) {
+							if (name.charAt(currPos) == '-') {
+								result[1]++;
+								i--;
+							}
+							else {
+								match = false;
+								result[0] = -1;
+								break;
+							}
 						}
+						currPos++;
 					}
 				}
 				
 				if (match) {
-					result = j;
+					result[0] = j;
 					break;
 				}
 			}
-		}		
-		
+		}
+				
 		return result;
 	}
 
@@ -765,13 +884,13 @@ public class PhoneSpellDialer extends Activity implements OnClickListener, OnLon
 		}
 	}
 
-	private static void highlightName(Spannable name, String pattern) {
+	private static void highlightName(Spannable name, String pattern, boolean isNumber) {
 		if (pattern.length() == 0)
 			return;
 		
-		int match = nextMatch(name, pattern);
-		if (match != -1) {
-			applyHighlight(name, match, pattern.length());
+		int[] match = nextMatch(name, pattern, isNumber);
+		if (match[0] != -1) {
+			applyHighlight(name, match[0], match[1]);
 		}
 	}
 	
@@ -855,5 +974,8 @@ public class PhoneSpellDialer extends Activity implements OnClickListener, OnLon
         public TextView labelView;
         public TextView dataView;
         public Uri lookupUri;
+        
+        public QuickContactBadge photoView;
+        public ImageView nonQuickContactPhotoView;
     }
 }

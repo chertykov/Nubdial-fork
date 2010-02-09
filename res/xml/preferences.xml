@@ -57,6 +57,11 @@
 		android:title="@string/title_enable_haptic_feedback"
 		android:defaultValue="false" />
 		
+	<CheckBoxPreference
+		android:key="show_contact_pictures"
+		android:title="@string/title_show_contact_pictures"
+		android:defaultValue="true" />
+		
 	</PreferenceCategory>
 	
 	<PreferenceCategory android:title="@string/category_smart_dial">				

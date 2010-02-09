@@ -16,6 +16,7 @@
     <string name="category_dialer">Dialer</string>
     <string name="title_enable_dial_tone">Enable dial tone</string>
     <string name="title_enable_haptic_feedback">Enable haptic feedback</string>
+    <string name="title_show_contact_pictures">Show contact pictures</string>
     
     <string name="category_smart_dial">T9 Search</string>
 	<string name="title_matched_italics">Italicize matched names</string>
@@ -31,10 +32,14 @@
 	<string name="title_misc_category">Miscellaneous</string>
 	
 	<!-- Wysie: Menu strings -->
+	<string name="menu_new_contacts">Add new contact</string>
+	<string name="menu_add_contacts">Add to contacts</string>
 	<string name="menu_call_log">Call log</string>
 	<string name="menu_contacts">Contacts</string>
 	<string name="menu_favs">Favourites</string>
 	
+	<!-- Wysie: Context menu -->
+	<string name="context_sms">Text contact</string>
 	
     <!-- Wysie: About strings -->    
     <string name="title_about">About</string>

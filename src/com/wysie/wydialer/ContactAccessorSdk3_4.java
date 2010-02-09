@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
 import android.provider.Contacts;
+import android.provider.Contacts.Intents.Insert;
 import android.provider.Contacts.People;
 
 final class ContactAccessorSdk3_4 extends ContactAccessor {
@@ -76,6 +77,14 @@ final class ContactAccessorSdk3_4 extends ContactAccessor {
 	@Override
 	public void setContentResolver(ContentResolver cr) {
 		myContentResolver = cr;
+	}
+
+	@Override
+	public Intent addToContacts(String number) {
+		Intent intent = new Intent(Intent.ACTION_INSERT_OR_EDIT);
+    	intent.putExtra(Insert.PHONE, number);
+    	intent.setType(People.CONTENT_ITEM_TYPE);
+		return intent;
 	}
 
 }

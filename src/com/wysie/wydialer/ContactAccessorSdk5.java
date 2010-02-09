@@ -5,8 +5,11 @@ import android.content.ContentUris;
 import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
+import android.provider.Contacts.People;
 import android.provider.ContactsContract.Contacts;
+import android.provider.ContactsContract.Intents.Insert;
 import android.provider.ContactsContract.CommonDataKinds.Phone;
+import android.telephony.PhoneNumberUtils;
 
 final class ContactAccessorSdk5 extends ContactAccessor {
 	ContentResolver myContentResolver;
@@ -95,15 +98,13 @@ final class ContactAccessorSdk5 extends ContactAccessor {
 		"(" + upName + " GLOB ? OR " + upName + " GLOB ?) AND " +
 		"has_phone_number = 1";*/
 	private final static String peopleSql = 
-		"(" + upName + " GLOB ? OR " + upName + " GLOB ? OR " + Phone.NUMBER + " GLOB ?)";
+		"(" + upName + " GLOB ? OR " + upName + " GLOB ? OR REPLACE(" + Phone.NUMBER + ",'-', '') GLOB ?)";
 
-	private static final String[] PEOPLE_PROJECTION = new String[] {
-		Contacts._ID, Contacts.LOOKUP_KEY, Contacts.DISPLAY_NAME };
 	private static final String PEOPLE_SORT = Contacts.DISPLAY_NAME +
 	" COLLATE LOCALIZED ASC";
 	
 	private static final String[] PEOPLE_PHONE_PROJECTION = new String[] {
-		Contacts._ID, Contacts.LOOKUP_KEY, Contacts.DISPLAY_NAME, Phone.NUMBER, Phone.TYPE, Phone.LABEL };
+		Contacts._ID, Contacts.LOOKUP_KEY, Contacts.DISPLAY_NAME, Phone.NUMBER, Phone.TYPE, Phone.LABEL, Contacts.PHOTO_ID };
 	
 	@Override
 	public Cursor recalculate(String filter, boolean matchAnywhere) {
@@ -116,11 +117,18 @@ final class ContactAccessorSdk5 extends ContactAccessor {
 		}
 		
 		return myContentResolver.query(Phone.CONTENT_URI, PEOPLE_PHONE_PROJECTION, peopleSql, args, PEOPLE_SORT);
-		//return myContentResolver.query(Contacts.CONTENT_URI, PEOPLE_PROJECTION, peopleSql, args, PEOPLE_SORT);
 	}
 
 	@Override
 	public void setContentResolver(ContentResolver cr) {
 		myContentResolver = cr;
+	}
+
+	@Override
+	public Intent addToContacts(String number) {
+		Intent intent = new Intent(Intent.ACTION_INSERT_OR_EDIT);
+    	intent.putExtra(Insert.PHONE, number);
+    	intent.setType(People.CONTENT_ITEM_TYPE);
+		return intent;
 	}
 }
