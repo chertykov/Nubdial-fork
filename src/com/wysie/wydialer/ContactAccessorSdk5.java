@@ -11,6 +11,8 @@ import android.provider.ContactsContract.Intents.Insert;
 import android.provider.ContactsContract.CommonDataKinds.Phone;
 import android.telephony.PhoneNumberUtils;
 
+import android.database.sqlite.SQLiteQueryBuilder;
+
 final class ContactAccessorSdk5 extends ContactAccessor {
 	ContentResolver myContentResolver;
 	final MyContactSplit myContactSplit;
@@ -115,6 +117,9 @@ final class ContactAccessorSdk5 extends ContactAccessor {
 		else {
 			args = new String[] { filter + "*", "*[ ]" + filter + "*", filter + "*" };
 		}
+		
+		//SQLiteQueryBuilder sqb = new SQLiteQueryBuilder();
+		//sqb.query(Phone.CONTENT_URI, PEOPLE_PHONE_PROJECTION, peopleSql, args, null, null, PEOPLE_SORT);
 		
 		return myContentResolver.query(Phone.CONTENT_URI, PEOPLE_PHONE_PROJECTION, peopleSql, args, PEOPLE_SORT);
 	}

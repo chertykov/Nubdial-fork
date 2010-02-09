@@ -72,12 +72,15 @@ import android.text.style.ForegroundColorSpan;
 import android.text.style.StyleSpan;
 import android.util.Log;
 import android.view.ContextMenu;
+import android.view.GestureDetector;
 import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
+import android.widget.AbsListView;
 import android.widget.AdapterView;
 import android.widget.EditText;
 import android.widget.ImageButton;
@@ -85,16 +88,19 @@ import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.QuickContactBadge;
 import android.widget.TextView;
+import android.widget.AbsListView.OnScrollListener;
 import android.widget.AdapterView.AdapterContextMenuInfo;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ResourceCursorAdapter;
 import android.view.ContextMenu.ContextMenuInfo;
+import android.view.GestureDetector.SimpleOnGestureListener;
 import android.view.View.OnClickListener;
 import android.view.View.OnCreateContextMenuListener;
 import android.view.View.OnLongClickListener;
+import android.view.View.OnTouchListener;
 
 import java.util.ArrayList;
-public class PhoneSpellDialer extends Activity implements OnClickListener, OnLongClickListener, /* OnCreateContextMenuListener, */ OnItemClickListener {
+public class PhoneSpellDialer extends Activity implements OnScrollListener, OnClickListener, OnLongClickListener, /* OnCreateContextMenuListener, */ OnItemClickListener {
 	private static final String TAG = "SpellDial";
 	
 	// Identifiers for our menu items.
@@ -113,7 +119,7 @@ public class PhoneSpellDialer extends Activity implements OnClickListener, OnLon
     private static final int TONE_RELATIVE_VOLUME = 80;
     private static final int DIAL_TONE_STREAM_TYPE = AudioManager.STREAM_MUSIC;
     
-	private static boolean showContactPictures, matchAnywhere, mDTMFToneEnabled, matchedItalics, matchedBold, matchedDigits, matchedHighlight, noMatches = false;
+	private static boolean hideDialpadOnScroll, showContactPictures, matchAnywhere, mDTMFToneEnabled, matchedItalics, matchedBold, matchedDigits, matchedHighlight, noMatches = false;
 	private Vibrator mVibrator;
     private boolean prefVibrateOn;
     private long[] mVibratePattern;
@@ -176,6 +182,7 @@ public class PhoneSpellDialer extends Activity implements OnClickListener, OnLon
 		matchedHighlightColor = new BackgroundColorSpan(Integer.parseInt(prefs.getString("matched_highlight_choice", "-3355444")));
 		matchAnywhere = prefs.getBoolean("match_num_sequence", true);
 		showContactPictures = prefs.getBoolean("show_contact_pictures", true);
+		hideDialpadOnScroll = prefs.getBoolean("auto_hide_dialpad_on_fling", true);
 		initVibrationPattern();
 		setDigitsColor(prefs);
 	}
@@ -290,6 +297,7 @@ public class PhoneSpellDialer extends Activity implements OnClickListener, OnLon
 	private void setupButton(int id) {
 		ImageButton button = (ImageButton) findViewById(id);
 		button.setOnClickListener(this);
+		button.setOnTouchListener(onTouchListener);
 		
 		if (id == R.id.button0 || id == R.id.button1 || id == R.id.deleteButton)
 			button.setOnLongClickListener(this);
@@ -318,9 +326,19 @@ public class PhoneSpellDialer extends Activity implements OnClickListener, OnLon
 
 		ListView list = (ListView) findViewById(R.id.contactlist);
 		list.setOnItemClickListener(this);
+		list.setOnScrollListener(this);
 		
+		/*
 		View keypad = findViewById(R.id.keypad);
 		keypad.setClickable(true);
+		keypad.setOnTouchListener(onTouchListener);
+		
+		View dialDelete = findViewById(R.id.dial_digits_delete);
+		dialDelete.setOnTouchListener(onTouchListener);
+		*/
+		
+		View digits = findViewById(R.id.digitsText);
+		digits.setOnTouchListener(onTouchListener);
 	}
 	
 	/*
@@ -413,6 +431,19 @@ public class PhoneSpellDialer extends Activity implements OnClickListener, OnLon
 		}
 		myAdapter.changeCursor(cur);
 		myContactList.invalidate(); // the new filter requires we redraw
+	}
+	
+	public void onScroll(AbsListView view, int firstVisibleItem, int visibleItemCount, int totalItemCount) {
+	      // TODO Auto-generated method stub
+	}
+	
+	public void onScrollStateChanged(AbsListView view, int scrollState) {
+		// TODO Auto-generated method stub
+		if(scrollState == OnScrollListener.SCROLL_STATE_FLING) {
+			if (hideDialpadOnScroll) {
+				toggleDialpad(false);
+			}
+		}
 	}
 	
 	public void onClick(View view) {
@@ -906,7 +937,43 @@ public class PhoneSpellDialer extends Activity implements OnClickListener, OnLon
             dialButton.setEnabled(false);
         	deleteButton.setEnabled(false);
         }
-	}
+	}	
+	
+    private final OnTouchListener onTouchListener = new OnTouchListener() {
+    	GestureDetector detect = new GestureDetector(new ToggleDialPadListener());
+    	{
+    		detect.setIsLongpressEnabled(false);
+    	}
+    	public boolean onTouch(View v, MotionEvent event) {
+    		return detect.onTouchEvent(event);
+    	}
+    };
+    
+    private class ToggleDialPadListener extends SimpleOnGestureListener {
+    	private static final float MIN_VELOCITY_DIP = -100.0f;
+    	private static final float MIN_VELOCITY_RISE = 100.0f;
+    	
+    	@Override
+    	public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
+    		if (velocityY < MIN_VELOCITY_DIP) {
+    			toggleDialpad(true);
+    		}
+    		else if (velocityY > MIN_VELOCITY_RISE) {
+    			toggleDialpad(false);
+    		}
+    		return super.onFling(e1, e2, velocityX, velocityY);
+    	}
+    }
+    
+    private void toggleDialpad(boolean showDialPad) {
+    	View dialPad = findViewById(R.id.keypad);
+    	if (showDialPad) {    		
+    		dialPad.setVisibility(View.VISIBLE);
+    	}
+    	else {
+    		dialPad.setVisibility(View.GONE);    	
+    	}
+    }
 
 	private static String buttonToGlobPiece(char c) {
 		switch (c) {

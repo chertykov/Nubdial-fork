@@ -17,6 +17,7 @@
     <string name="title_enable_dial_tone">Enable dial tone</string>
     <string name="title_enable_haptic_feedback">Enable haptic feedback</string>
     <string name="title_show_contact_pictures">Show contact pictures</string>
+    <string name="title_hide_dialpad_on_fling">Auto-hide dialpad on fling</string>
     
     <string name="category_smart_dial">T9 Search</string>
 	<string name="title_matched_italics">Italicize matched names</string>
@@ -51,5 +52,6 @@
     <string name="summary_about_credits">SpellDial by Lawrence Greenfield</string>
     <string name="title_about_source">Source Code</string>
     <string name="summary_about_source">http://code.google.com/p/nubdial/</string>
-	
+    <string name="title_basic_usage">Basic Usage</string>
+	<string name="summary_basic_usage">Fling down on the dialpad area to hide it, fling up to show it. Use # for spaces in name.</string>
 </resources>

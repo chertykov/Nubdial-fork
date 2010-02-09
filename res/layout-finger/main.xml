@@ -105,7 +105,8 @@
     	android:layout_marginTop="2dip"
     	android:layout_marginLeft="1dip"
     	android:layout_marginRight="1dip"  
-		android:layout_above="@id/keypad">
+		android:layout_above="@id/keypad"
+		android:layout_alignWithParentIfMissing="true">
       <include layout="@layout/dial_digits_delete" />
 	</LinearLayout>
     

@@ -61,6 +61,12 @@
 		android:key="show_contact_pictures"
 		android:title="@string/title_show_contact_pictures"
 		android:defaultValue="true" />
+	
+	<CheckBoxPreference
+		android:key="auto_hide_dialpad_on_fling"
+		android:title="@string/title_hide_dialpad_on_fling"
+		android:defaultValue="true" />
+		
 		
 	</PreferenceCategory>
 	
@@ -136,6 +142,11 @@
                 android:title="@string/title_about_source"
                 android:summary="@string/summary_about_source"
                 android:enabled="false" />
+          <Preference
+                android:key="about_source"
+                android:title="@string/title_basic_usage"
+                android:summary="@string/summary_basic_usage"
+                android:enabled="false" />                
         </PreferenceScreen>
 	</PreferenceCategory>
 		
