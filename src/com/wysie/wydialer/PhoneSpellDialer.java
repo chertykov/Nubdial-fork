@@ -147,7 +147,7 @@ public class PhoneSpellDialer extends Activity implements OnScrollListener, OnCl
 		super.onCreate(savedInstanceState);
 		
         PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
-		requestWindowFeature(Window.FEATURE_NO_TITLE);
+
 		setContentView(R.layout.main);
 		
 		contactAccessor = ContactAccessor.getInstance(getContentResolver());
