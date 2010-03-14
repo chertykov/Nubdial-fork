@@ -100,6 +100,7 @@ import android.view.View.OnCreateContextMenuListener;
 import android.view.View.OnLongClickListener;
 import android.view.View.OnTouchListener;
 
+import java.text.Collator;
 import java.util.ArrayList;
 public class PhoneSpellDialer extends Activity implements OnScrollListener, OnClickListener, OnLongClickListener, /* OnCreateContextMenuListener, */ OnItemClickListener {
 	private static final String TAG = "SpellDial";
@@ -142,6 +143,15 @@ public class PhoneSpellDialer extends Activity implements OnScrollListener, OnCl
 	private ContactListAdapter myAdapter;
 	private ListView myContactList;
 	
+	private static final Collator COLLATOR = Collator.getInstance();
+	private static final String[] NORM_STRINGS = new String['z' - 'a' + 1];
+	{
+	    COLLATOR.setStrength(Collator.PRIMARY);
+	    for (char b = 'a'; b <= 'z'; b++) {
+		NORM_STRINGS[b - 'a'] = new String(new char[] { b });
+	    }
+	}
+
 	/** Called when the activity is first created. */
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
@@ -792,6 +802,33 @@ public class PhoneSpellDialer extends Activity implements OnScrollListener, OnCl
 
         return photoBm;
     }
+    
+    private static char normalize(final char alpha) {
+        if (alpha == '\u00df') { // &szlig;
+            return 's';
+        }
+        if (alpha == '\u00f8' || alpha == '\u00d8') { // &oslash; / &Oslash;
+            return 'o';
+        }
+        final String source = new String(new char[] { alpha });
+        final int compA = COLLATOR.compare(source, NORM_STRINGS[0]);
+        if (compA == 0) {
+            return 'a';
+        }
+        final int compZ = COLLATOR.compare(source, NORM_STRINGS[NORM_STRINGS.length - 1]);
+        if (compZ == 0) {
+            return 'z';
+        }
+        if (compA < 0 || compZ > 0) {
+            return alpha;
+        }
+        for (char b = 'a' + 1; b < 'z'; b++) {
+            if (COLLATOR.compare(source, NORM_STRINGS[b - 'a']) == 0) {
+                return b;
+            }
+        }
+        return alpha;
+    }
 
 	private static char mapToPhone(char alpha) {
 		if (Character.isDigit(alpha) || alpha == '+')
@@ -800,7 +837,7 @@ public class PhoneSpellDialer extends Activity implements OnScrollListener, OnCl
 		if (alpha == ' ')
 			return '#';
 		
-		char c = Character.toLowerCase(alpha);
+		char c = normalize(alpha);
 		if (c < 'a' || c > 'z')
 			return 0;
 		if (c <= 'o') {
@@ -1003,21 +1040,21 @@ public class PhoneSpellDialer extends Activity implements OnScrollListener, OnCl
 	private static String buttonToGlobPiece(char c) {
 		switch (c) {
 		case '2':
-			return "[2ABC]";
+			return "[2ABC\u00c0\u00c1\u00c2\u00c3\u00c4\u00c5\u00e0\u00e1\u00e2\u00e3\u00e4\u00e5\u0100\u0101\u0102\u0103\u0104\u0105\u01cd\u01ce\u01de\u01df\u01e0\u01e1\u01fa\u01fb\u0200\u0201\u0202\u0203\u0226\u0227\u1e00\u1e01\u1ea0\u1ea1\u1ea2\u1ea3\u1ea4\u1ea5\u1ea6\u1ea7\u1ea8\u1ea9\u1eaa\u1eab\u1eac\u1ead\u1eae\u1eaf\u1eb0\u1eb1\u1eb2\u1eb3\u1eb4\u1eb5\u1eb6\u1eb7\u212bfrom b: \u1e02\u1e03\u1e04\u1e05\u1e06\u1e07\u00c7\u00e7\u0106\u0107\u0108\u0109\u010a\u010b\u010c\u010d\u1e08\u1e09]";
 		case '3':
-			return "[3DEF]";
+			return "[3DEF\u010e\u010f\u1e0a\u1e0b\u1e0c\u1e0d\u1e0e\u1e0f\u1e10\u1e11\u1e12\u1e13\u00c8\u00c9\u00ca\u00cb\u00e8\u00e9\u00ea\u00eb\u0112\u0113\u0114\u0115\u0116\u0117\u0118\u0119\u011a\u011b\u0204\u0205\u0206\u0207\u0228\u0229\u1e14\u1e15\u1e16\u1e17\u1e18\u1e19\u1e1a\u1e1b\u1e1c\u1e1d\u1eb8\u1eb9\u1eba\u1ebb\u1ebc\u1ebd\u1ebe\u1ebf\u1ec0\u1ec1\u1ec2\u1ec3\u1ec4\u1ec5\u1ec6\u1ec7\u1e1e\u1e1f]";
 		case '4':
-			return "[4GHI]";
+			return "[4GHI\u011c\u011d\u011e\u011f\u0120\u0121\u0122\u0123\u01e6\u01e7\u01f4\u01f5\u1e20\u1e21\u0124\u0125\u021e\u021f\u1e22\u1e23\u1e24\u1e25\u1e26\u1e27\u1e28\u1e29\u1e2a\u1e2b\u1e96\u00cc\u00cd\u00ce\u00cf\u00ec\u00ed\u00ee\u00ef\u0128\u0129\u012a\u012b\u012c\u012d\u012e\u012f\u0130\u01cf\u01d0\u0208\u0209\u020a\u020b\u1e2c\u1e2d\u1e2e\u1e2f\u1ec8\u1ec9\u1eca\u1ecb]";
 		case '5':
-			return "[5JKL]";
+			return "[5JKL\u0134\u0135\u01f0\u0136\u0137\u01e8\u01e9\u1e30\u1e31\u1e32\u1e33\u1e34\u1e35\u212a\u0139\u013a\u013b\u013c\u013d\u013e\u1e36\u1e37\u1e38\u1e39\u1e3a\u1e3b\u1e3c\u1e3d]";
 		case '6':
-			return "[6MNO]";
+			return "[6MNO\u1e3e\u1e3f\u1e40\u1e41\u1e42\u1e43\u00d1\u00f1\u0143\u0144\u0145\u0146\u0147\u0148\u01f8\u01f9\u1e44\u1e45\u1e46\u1e47\u1e48\u1e49\u1e4a\u1e4b\u00d2\u00d3\u00d4\u00d5\u00d6\u00d8\u00f2\u00f3\u00f4\u00f5\u00f6\u00f8\u014c\u014d\u014e\u014f\u0150\u0151\u01a0\u01a1\u01d1\u01d2\u01ea\u01eb\u01ec\u01ed\u020c\u020d\u020e\u020f\u022a\u022b\u022c\u022d\u022e\u022f\u0230\u0231\u1e4c\u1e4d\u1e4e\u1e4f\u1e50\u1e51\u1e52\u1e53\u1ecc\u1ecd\u1ece\u1ecf\u1ed0\u1ed1\u1ed2\u1ed3\u1ed4\u1ed5\u1ed6\u1ed7\u1ed8\u1ed9\u1eda\u1edb\u1edc\u1edd\u1ede\u1edf\u1ee0\u1ee1\u1ee2\u1ee3]";
 		case '7':
-			return "[7PQRS]";
+			return "[7PQRS\u1e54\u1e55\u1e56\u1e57\u0154\u0155\u0156\u0157\u0158\u0159\u0210\u0211\u0212\u0213\u1e58\u1e59\u1e5a\u1e5b\u1e5c\u1e5d\u1e5e\u1e5f\u00df\u015a\u015b\u015c\u015d\u015e\u015f\u0160\u0161\u0218\u0219\u1e60\u1e61\u1e62\u1e63\u1e64\u1e65\u1e66\u1e67\u1e68\u1e69]";
 		case '8':
-			return "[8TUV]";
+			return "[8TUV\u0162\u0163\u0164\u0165\u021a\u021b\u1e6a\u1e6b\u1e6c\u1e6d\u1e6e\u1e6f\u1e70\u1e71\u1e97\u00d9\u00da\u00db\u00dc\u00f9\u00fa\u00fb\u00fc\u0168\u0169\u016a\u016b\u016c\u016d\u016e\u016f\u0170\u0171\u0172\u0173\u01af\u01b0\u01d3\u01d4\u01d5\u01d6\u01d7\u01d8\u01d9\u01da\u01db\u01dc\u0214\u0215\u0216\u0217\u1e72\u1e73\u1e74\u1e75\u1e76\u1e77\u1e78\u1e79\u1e7a\u1e7b\u1ee4\u1ee5\u1ee6\u1ee7\u1ee8\u1ee9\u1eea\u1eeb\u1eec\u1eed\u1eee\u1eef\u1ef0\u1ef1\u1e7c\u1e7d\u1e7e\u1e7f]";
 		case '9':
-			return "[9WXYZ]";
+			return "[9WXYZ\u0174\u0175\u1e80\u1e81\u1e82\u1e83\u1e84\u1e85\u1e86\u1e87\u1e88\u1e89\u1e98\u1e8a\u1e8b\u1e8c\u1e8d\u00dd\u00fd\u00ff\u0176\u0177\u0178\u0232\u0233\u1e8e\u1e8f\u1e99\u1ef2\u1ef3\u1ef4\u1ef5\u1ef6\u1ef7\u1ef8\u1ef9\u0179\u017a\u017b\u017c\u017d\u017e\u1e90\u1e91\u1e92\u1e93\u1e94\u1e95]";
 		case '*':
 			return "?";
 		default:
