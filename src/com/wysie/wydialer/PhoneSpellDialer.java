@@ -64,6 +64,7 @@ import android.provider.ContactsContract.Data;
 import android.provider.ContactsContract.CommonDataKinds.Phone;
 import android.provider.ContactsContract.CommonDataKinds.Photo;
 import android.telephony.PhoneNumberFormattingTextWatcher;
+import android.telephony.TelephonyManager;
 import android.text.method.DialerKeyListener;
 import android.text.Spannable;
 import android.text.TextUtils;
@@ -185,6 +186,14 @@ public class PhoneSpellDialer extends Activity implements OnScrollListener, OnCl
 		hideDialpadOnScroll = prefs.getBoolean("auto_hide_dialpad_on_fling", true);
 		initVibrationPattern();
 		setDigitsColor(prefs);
+		
+		ImageButton digitOne = (ImageButton)findViewById(R.id.button1);		
+		if (hasVoicemail()) {
+        	digitOne.setImageResource(R.drawable.dial_num_1_with_vm);
+        }
+        else {
+        	digitOne.setImageResource(R.drawable.dial_num_1_no_vm);
+        }
 	}
 
     @Override
@@ -563,10 +572,16 @@ public class PhoneSpellDialer extends Activity implements OnScrollListener, OnCl
 			break;
 		}
 		case R.id.button1: {
-			Intent i = new Intent(Intent.ACTION_CALL);
-			i.setData(Uri.parse("voicemail:"));
-			startActivity(i);
-			result = true;
+			if (digitsView.length() == 0) {
+				if (hasVoicemail()) {
+					Intent i = new Intent(Intent.ACTION_CALL);
+					i.setData(Uri.parse("voicemail:"));
+					startActivity(i);
+					result = true;
+					ImageButton digitOne = (ImageButton)findViewById(R.id.button1);
+					digitOne.setPressed(false);
+				}
+			}
 			break;
 		}
 		case R.id.deleteButton: {
@@ -838,16 +853,24 @@ public class PhoneSpellDialer extends Activity implements OnScrollListener, OnCl
 			if (match) {
 				int currPos = offsets.get(j);
 				for (int i = 0; i < pattern.length(); i++) {
-					if (mapToPhone(name.charAt(currPos)) != pattern.charAt(i)) {
-						if (name.charAt(currPos) == '-') {
-							result[1]++;
-							i--;
-						}
-						else {
-							match = false;
-							result[0] = -1;
-							break;
-						}
+					try {
+						if (mapToPhone(name.charAt(currPos)) != pattern.charAt(i)) {
+							if (name.charAt(currPos) == '-') {
+								result[1]++;
+								i--;
+							}
+							else {							
+								match = false;
+								result[0] = -1;
+								result[1] = pattern.length();
+								break;
+							}
+						}					
+					}
+					catch (StringIndexOutOfBoundsException e) {
+						match = false;
+						result[0] = -1;
+						result[1] = pattern.length();
 					}
 					currPos++;
 				}
@@ -874,6 +897,7 @@ public class PhoneSpellDialer extends Activity implements OnScrollListener, OnCl
 							else {
 								match = false;
 								result[0] = -1;
+								result[1] = pattern.length();
 								break;
 							}
 						}
@@ -893,6 +917,7 @@ public class PhoneSpellDialer extends Activity implements OnScrollListener, OnCl
 
 	private static void applyHighlight(Spannable name, int start, int len) {
 		if (len == 0) return;
+		Log.d("SPANNABLE NAME", ""+name);
 		
 		if (matchedItalics) {
 			name.setSpan(ITALIC_STYLE, start, start + len,
@@ -1031,6 +1056,24 @@ public class PhoneSpellDialer extends Activity implements OnScrollListener, OnCl
                              new int[] { colorPressed, colorFocused, colorUnselected }
                      ));
         digitsView.setCursorVisible(false);
+    }
+    
+    //Wysie: Check for voicemail number    
+    private boolean hasVoicemail() {
+    	boolean hasVoicemail = false; 
+    	TelephonyManager mgr = (TelephonyManager)getSystemService(Context.TELEPHONY_SERVICE);
+    	
+    	try {
+    		String num = mgr.getVoiceMailNumber();
+    		if (!(num == null || num.equals(""))) 
+    			hasVoicemail = true;
+    	} catch (SecurityException se) {
+    		// Possibly no READ_PHONE_STATE privilege.
+    	} catch (NullPointerException e) {
+    		//
+    	}
+    	
+    	return hasVoicemail;
     }
     
     final static class ContactListItemCache {
