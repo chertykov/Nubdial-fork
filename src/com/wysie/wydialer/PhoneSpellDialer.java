@@ -127,8 +127,7 @@ public class PhoneSpellDialer extends Activity implements OnScrollListener,
 			matchedDigits, matchedHighlight, noMatches = false;
 	private Vibrator mVibrator;
 	private boolean prefVibrateOn;
-	private long[] mVibratePattern;
-	private static final int VIBRATE_NO_REPEAT = -1;
+	private static int vibrate_time;
 
 	private static final StyleSpan ITALIC_STYLE = new StyleSpan(
 			android.graphics.Typeface.ITALIC);
@@ -195,7 +194,9 @@ public class PhoneSpellDialer extends Activity implements OnScrollListener,
 		myContactList.setAdapter(myAdapter);
 		setHandlers();
 		setPreferences();
-		
+
+		mVibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
+
 		PhoneSpellDialer.find_patterns = r.getStringArray(R.array.numpad_patterns);
 	}
 
@@ -218,17 +219,14 @@ public class PhoneSpellDialer extends Activity implements OnScrollListener,
 		showContactPictures = prefs.getBoolean("show_contact_pictures", true);
 		hideDialpadOnScroll = prefs.getBoolean("auto_hide_dialpad_on_fling",
 				true);
-		initVibrationPattern();
 		setDigitsColor(prefs);
+		vibrate_time = 35;
 
 		ImageButton digitOne = (ImageButton) findViewById(R.id.button1);
 		if (hasVoicemail())
-		{
 			digitOne.setImageResource(R.drawable.dial_num_1_with_vm);
-		} else
-		{
+		else
 			digitOne.setImageResource(R.drawable.dial_num_1_no_vm);
-		}
 	}
 
 	@Override
@@ -694,39 +692,7 @@ public class PhoneSpellDialer extends Activity implements OnScrollListener,
 	private synchronized void vibrate()
 	{
 		if (!prefVibrateOn)
-		{
-			return;
-		}
-		if (mVibrator == null)
-		{
-			mVibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
-		}
-		mVibrator.vibrate(mVibratePattern, VIBRATE_NO_REPEAT);
-	}
-
-	private void initVibrationPattern()
-	{
-		int[] pattern = null;
-		pattern = getResources().getIntArray(
-				R.array.config_virtualKeyVibePattern);
-
-		if (null == pattern)
-		{
-			Log.e(TAG, "Vibrate pattern is null.");
-			prefVibrateOn = false;
-		}
-
-		if (!prefVibrateOn)
-		{
-			return;
-		}
-
-		// int[] to long[] conversion.
-		mVibratePattern = new long[pattern.length];
-		for (int i = 0; i < pattern.length; i++)
-		{
-			mVibratePattern[i] = pattern[i];
-		}
+			mVibrator.vibrate(vibrate_time);
 	}
 
 	// Listeners for the list items.
@@ -787,8 +753,7 @@ public class PhoneSpellDialer extends Activity implements OnScrollListener,
 		public void bindView(View view, Context context, Cursor cursor)
 		{
 
-			final ContactListItemCache cache = (ContactListItemCache) view
-					.getTag();
+			final ContactListItemCache cache = (ContactListItemCache) view.getTag();
 			final int DISPLAY_NAME_INDEX = 2;
 			final int PHONE_NUMBER_INDEX = 3;
 			final int PHONE_TYPE_INDEX = 4;
