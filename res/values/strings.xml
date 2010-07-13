@@ -47,11 +47,12 @@
     <string name="title_about_name">Application Name</string>
     <string name="summary_about_name">NubDial</string>
     <string name="title_about_author">Developed By</string>
-    <string name="summary_about_author">Wysie</string>
+    <string name="summary_about_author">Wysie, Denis Chertykov</string>
     <string name="title_about_credits">Based On</string>
     <string name="summary_about_credits">SpellDial by Lawrence Greenfield</string>
     <string name="title_about_source">Source Code</string>
     <string name="summary_about_source">http://code.google.com/p/nubdial/</string>
     <string name="title_basic_usage">Basic Usage</string>
 	<string name="summary_basic_usage">Fling down on the dialpad area to hide it, fling up to show it. Use # for spaces in name.</string>
+	<string-array name="numpad_patterns"></string-array>
 </resources>

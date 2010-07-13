@@ -111,17 +111,16 @@ public class PhoneSpellDialer extends Activity implements OnScrollListener,
 	private static final int ADD_TO_CONTACTS = 0;
 	private static final int CALL_LOG = 1;
 	private static final int CONTACTS = 2;
-	private static final int FAVOURITES = 3;
 	private static final int SETTINGS_ID = 4;
-
-	// Identifiers for context menus
-	private static final int SMS = 0;
 
 	private ToneGenerator mToneGenerator;
 	private Object mToneGeneratorLock = new Object();
 	private static final int TONE_LENGTH_MS = 150;
 	private static final int TONE_RELATIVE_VOLUME = 80;
 	private static final int DIAL_TONE_STREAM_TYPE = AudioManager.STREAM_MUSIC;
+
+	// Delay for contacts list recalculation. 
+	private static final int RECALC_DELAY = 200;
 
 	private static boolean hideDialpadOnScroll, showContactPictures,
 			matchAnywhere, mDTMFToneEnabled, matchedItalics, matchedBold,
@@ -148,6 +147,7 @@ public class PhoneSpellDialer extends Activity implements OnScrollListener,
 	private StringBuilder curFilter;
 	private ContactListAdapter myAdapter;
 	private ListView myContactList;
+	private static String [] find_patterns;
 
 	private Handler mHandler = new Handler();
 	private UpdateTimerTask mUpdateTimeTask = new UpdateTimerTask();
@@ -173,11 +173,11 @@ public class PhoneSpellDialer extends Activity implements OnScrollListener,
 
 		setContentView(R.layout.main);
 
-		contactAccessor = ContactAccessor.getInstance(getContentResolver());
+		contactAccessor = new ContactAccessor (getContentResolver());
 		// Cursor cur = contactAccessor.recalculate("", matchAnywhere);
 		// startManagingCursor(cur);
-		myAdapter = new ContactListAdapter(this, null, contactAccessor
-				.getContactSplit());
+		myAdapter = new ContactListAdapter(this, null,
+				                           contactAccessor.getContactSplit());
 		curFilter = new StringBuilder();
 
 		// scott
@@ -195,6 +195,8 @@ public class PhoneSpellDialer extends Activity implements OnScrollListener,
 		myContactList.setAdapter(myAdapter);
 		setHandlers();
 		setPreferences();
+		
+		PhoneSpellDialer.find_patterns = r.getStringArray(R.array.numpad_patterns);
 	}
 
 	private void setPreferences()
@@ -425,26 +427,24 @@ public class PhoneSpellDialer extends Activity implements OnScrollListener,
 
 		for (char c : currInput)
 		{
-			curFilter.append(buttonToGlobPiece(c));
+			String s = buttonToGlobPiece(c);
+			Log.i ("buttonToGlobPiece", String.format("Arg char: %c ret: %s",
+					c, s));
+			curFilter.append(s);
 		}
 	}
 
 	private void updateFilter(boolean add)
 	{
 		if (!add)
-		{
 			noMatches = false;
-		}
 
 		createGlob();
 
 		if (noMatches)
-		{
 			return;
-		} else
-		{
+		else
 			recalculate();
-		}
 	}
 
 	private void removeAll()
@@ -466,7 +466,7 @@ public class PhoneSpellDialer extends Activity implements OnScrollListener,
 	private void recalculate()
 	{
 		mHandler.removeCallbacks(mUpdateTimeTask);
-		mHandler.postDelayed(mUpdateTimeTask, 500);
+		mHandler.postDelayed(mUpdateTimeTask, RECALC_DELAY);
 	}
 
 	public void onScroll(AbsListView view, int firstVisibleItem,
@@ -603,6 +603,9 @@ public class PhoneSpellDialer extends Activity implements OnScrollListener,
 			{
 				Uri telUri = Uri.fromParts("tel", number, null);
 				startActivity(new Intent(Intent.ACTION_CALL, telUri));
+				curFilter.setLength(0);
+				digitsView.getText().clear();
+				noMatches = false;
 			}
 			return;
 		}
@@ -806,7 +809,8 @@ public class PhoneSpellDialer extends Activity implements OnScrollListener,
 				final String label = cursor.getString(PHONE_LABEL_INDEX);
 				cache.labelView.setText(Phone.getTypeLabel(context
 						.getResources(), type, label));
-			} else
+			} 
+			else
 			{
 				// There is no label, hide the the view
 				cache.labelView.setVisibility(View.GONE);
@@ -845,12 +849,14 @@ public class PhoneSpellDialer extends Activity implements OnScrollListener,
 				if (photo != null)
 				{
 					cache.photoView.setImageBitmap(photo);
-				} else
+				} 
+				else
 				{
 					cache.photoView
 							.setImageResource(R.drawable.ic_contact_list_picture);
 				}
-			} else
+			}
+			else
 			{
 				cache.photoView.setVisibility(View.GONE);
 				cache.nonQuickContactPhotoView.setVisibility(View.GONE);
@@ -884,7 +890,8 @@ public class PhoneSpellDialer extends Activity implements OnScrollListener,
 				photoBm = BitmapFactory.decodeByteArray(photoData, 0,
 						photoData.length, options);
 			}
-		} finally
+		}
+		finally
 		{
 			if (photoCursor != null)
 			{
@@ -947,10 +954,12 @@ public class PhoneSpellDialer extends Activity implements OnScrollListener,
 		{
 			int x = (c - 'a') / 3;
 			return (char) ('2' + x);
-		} else if (c >= 'p' && c <= 's')
+		} 
+		else if (c >= 'p' && c <= 's')
 		{
 			return '7';
-		} else if (c >= 't' && c <= 'v')
+		} 
+		else if (c >= 't' && c <= 'v')
 		{
 			return '8';
 		} else
@@ -1007,14 +1016,15 @@ public class PhoneSpellDialer extends Activity implements OnScrollListener,
 				{
 					try
 					{
-						if (mapToPhone(name.charAt(currPos)) != pattern
-								.charAt(i))
+						if (mapToPhone(name.charAt(currPos)) 
+							!= pattern.charAt(i))
 						{
 							if (name.charAt(currPos) == '-')
 							{
 								result[1]++;
 								i--;
-							} else
+							} 
+							else
 							{
 								match = false;
 								result[0] = -1;
@@ -1022,7 +1032,8 @@ public class PhoneSpellDialer extends Activity implements OnScrollListener,
 								break;
 							}
 						}
-					} catch (StringIndexOutOfBoundsException e)
+					} 
+					catch (StringIndexOutOfBoundsException e)
 					{
 						match = false;
 						result[0] = -1;
@@ -1057,7 +1068,8 @@ public class PhoneSpellDialer extends Activity implements OnScrollListener,
 							{
 								result[1]++;
 								i--;
-							} else
+							} 
+							else
 							{
 								match = false;
 								result[0] = -1;
@@ -1132,7 +1144,8 @@ public class PhoneSpellDialer extends Activity implements OnScrollListener,
 			digitsView.setBackgroundDrawable(mDigitsBackground);
 			dialButton.setEnabled(true);
 			deleteButton.setEnabled(true);
-		} else
+		} 
+		else
 		{
 			digitsView.setCursorVisible(false);
 			digitsView.setBackgroundDrawable(mDigitsEmptyBackground);
@@ -1162,12 +1175,13 @@ public class PhoneSpellDialer extends Activity implements OnScrollListener,
 
 		@Override
 		public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX,
-				float velocityY)
+				               float velocityY)
 		{
 			if (velocityY < MIN_VELOCITY_DIP)
 			{
 				toggleDialpad(true);
-			} else if (velocityY > MIN_VELOCITY_RISE)
+			} 
+			else if (velocityY > MIN_VELOCITY_RISE)
 			{
 				toggleDialpad(false);
 			}
@@ -1181,7 +1195,8 @@ public class PhoneSpellDialer extends Activity implements OnScrollListener,
 		if (showDialPad)
 		{
 			dialPad.setVisibility(View.VISIBLE);
-		} else
+		} 
+		else
 		{
 			dialPad.setVisibility(View.GONE);
 		}
@@ -1189,6 +1204,11 @@ public class PhoneSpellDialer extends Activity implements OnScrollListener,
 
 	private static String buttonToGlobPiece(char c)
 	{
+		if (find_patterns.length > 0 && c > '0' && c <= '9')
+		{
+			int index = c -'1';
+			return find_patterns[index];
+		}
 		switch (c)
 		{
 		case '2':
@@ -1231,11 +1251,13 @@ public class PhoneSpellDialer extends Activity implements OnScrollListener,
 						"focused_digit_color_custom", "-1"));
 				colorUnselected = Color.parseColor(ePrefs.getString(
 						"unselected_digit_color_custom", "-1"));
-			} catch (IllegalArgumentException e)
+			} 
+			catch (IllegalArgumentException e)
 			{
 				// Do nothing
 			}
-		} else
+		} 
+		else
 		{
 			colorPressed = Integer.parseInt(ePrefs.getString(
 					"pressed_digit_color", "-16777216"));
@@ -1266,10 +1288,12 @@ public class PhoneSpellDialer extends Activity implements OnScrollListener,
 			String num = mgr.getVoiceMailNumber();
 			if (!(num == null || num.equals("")))
 				hasVoicemail = true;
-		} catch (SecurityException se)
+		} 
+		catch (SecurityException se)
 		{
 			// Possibly no READ_PHONE_STATE privilege.
-		} catch (NullPointerException e)
+		} 
+		catch (NullPointerException e)
 		{
 			//
 		}
@@ -1280,8 +1304,8 @@ public class PhoneSpellDialer extends Activity implements OnScrollListener,
 	private void updatecontactlist(Cursor cur)
 	{
 
-		Log.i("updatecontactlist", "cursor count:".concat(String.format("{0}",
-				cur.getCount())));
+		Log.i("updatecontactlist", String.format("cursor count: %d",
+												 cur.getCount()));
 
 		if (cur.getCount() == 0)
 		{
@@ -1334,8 +1358,8 @@ public class PhoneSpellDialer extends Activity implements OnScrollListener,
 			Cursor cur = PhoneSpellDialer.this.contactAccessor.recalculate(
 					filter[0], matchAnywhere);
 
-			Log.i("SearchContactsTask.doInBackground", "cur count:"
-					.concat(String.format("{0}", cur.getCount())));
+			Log.i("SearchContactsTask.doInBackground", 
+				  String.format("cur count: %d", cur.getCount()));
 
 			return cur;// cur;
 		}
