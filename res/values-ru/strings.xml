@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<string name="app_name">NubDial</string>
+	<string name="numbers"></string>
+	
+	
+	<string name="menu_settings">Настройки</string>
+    <string name="title_change_digits_color">Изменить цвет цифр</string>
+    <string name="title_digits_color_pressed">Цвет цифр (нажатых)</string>
+    <string name="title_digits_color_focused">Цвет цифр (выбранных)</string>
+    <string name="title_digits_color_unselected">Цвет цифр (не выбранных)</string>
+    <string name="title_choose_color">Выберите цвет</string>
+    <string name="title_use_custom_color">Использовать свой цвет цифр</string>
+    <string name="summaryon_custom_color">Формат: #RRGGBB или #AARRGGBB. </string>
+    
+    <string name="category_dialer">Dialer</string>
+    <string name="title_enable_dial_tone">Тональные сигналы нажатия</string>
+    <string name="title_enable_haptic_feedback">Включить вибрацию при нажатии</string>
+    <string name="title_show_contact_pictures">Показывать фотографии</string>
+    <string name="title_hide_dialpad_on_fling">Auto-hide dialpad on fling</string>
+    
+    <string name="category_smart_dial">Поиск T9</string>
+	<string name="title_matched_italics">Выделять наклонным шрифтом найденное</string>
+	<string name="title_matched_bold">Выделять жирным шрифтом найденное</string>
+	<string name="title_matched_colour">Ваделять цветом найденное</string>
+	<string name="title_choose_colour">Выбрать цвет выделения</string>
+	<string name="title_matched_highlight">Выделять найденное</string>
+	<string name="title_choose_highlight">Выберите цвет выделения</string>
+	<string name="title_match_num_seq">Поиск с любой цифры номера</string>
+	<string name="summaryon_match_num_seq">Поиск с любой цифры в номере</string>
+	<string name="summaryoff_match_num_seq">Поиск с первой цифры номера</string>
+	
+	<string name="title_misc_category">Прочее</string>
+	
+	<!-- Wysie: Menu strings -->
+	<string name="menu_new_contacts">Создать контакт</string>
+	<string name="menu_add_contacts">Добавить в контакты</string>
+	<string name="menu_call_log">История</string>
+	<string name="menu_contacts">Контакты</string>
+	<string name="menu_favs">Избранные</string>
+	
+	<!-- Wysie: Context menu -->
+	<string name="context_sms">Text contact</string>
+	
+    <!-- Wysie: About strings -->    
+    <string name="title_about">About</string>
+    <string name="title_about_name">Application Name</string>
+    <string name="summary_about_name">NubDial</string>
+    <string name="title_about_author">Developed By</string>
+    <string name="summary_about_author">Wysie</string>
+    <string name="title_about_credits">Based On</string>
+    <string name="summary_about_credits">SpellDial by Lawrence Greenfield</string>
+    <string name="title_about_source">Source Code</string>
+    <string name="summary_about_source">http://code.google.com/p/nubdial/</string>
+    <string name="title_basic_usage">Basic Usage</string>
+	<string name="summary_basic_usage">Fling down on the dialpad area to hide it, fling up to show it. Use # for spaces in name.</string>
+	<string-array name="numpad_patterns">
+		<item>[1]</item>
+		<item>[2АБВГабвг]</item>
+		<item>[3ДЕЁЖЗдеёжз]</item>
+		<item>[4ИЙКЛийкл]</item>
+		<item>[5МНОПмноп]</item>
+		<item>[6РСТУрсту]</item>
+		<item>[7ФХЦЧфхцч]</item>
+		<item>[8ШЩЪЫшщъы]</item>
+		<item>[9ЬЭЮЯьэюя]</item>
+	</string-array>
+</resources>
