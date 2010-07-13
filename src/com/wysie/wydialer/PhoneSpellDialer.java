@@ -220,7 +220,7 @@ public class PhoneSpellDialer extends Activity implements OnScrollListener,
 		hideDialpadOnScroll = prefs.getBoolean("auto_hide_dialpad_on_fling",
 				true);
 		setDigitsColor(prefs);
-		vibrate_time = 35;
+		vibrate_time = Integer.parseInt(prefs.getString("vibration_time", "30"));
 
 		ImageButton digitOne = (ImageButton) findViewById(R.id.button1);
 		if (hasVoicemail())
@@ -691,7 +691,7 @@ public class PhoneSpellDialer extends Activity implements OnScrollListener,
 
 	private synchronized void vibrate()
 	{
-		if (!prefVibrateOn)
+		if (prefVibrateOn)
 			mVibrator.vibrate(vibrate_time);
 	}
 

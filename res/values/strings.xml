@@ -55,4 +55,6 @@
     <string name="title_basic_usage">Basic Usage</string>
 	<string name="summary_basic_usage">Fling down on the dialpad area to hide it, fling up to show it. Use # for spaces in name.</string>
 	<string-array name="numpad_patterns"></string-array>
+	<string name="title_vibration_time">Vibration duration (milliseconds)</string>
+	
 </resources>

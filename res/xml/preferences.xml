@@ -55,7 +55,17 @@
 	<CheckBoxPreference
 		android:key="dial_enable_haptic"
 		android:title="@string/title_enable_haptic_feedback"
-		android:defaultValue="false" />
+		android:defaultValue="false" 
+		android:disableDependentsState="false"/>
+		
+	<ListPreference
+		android:key="vibration_time"
+ 		android:title="@string/title_vibration_time"
+		android:dialogTitle="@string/title_vibration_time"
+		android:entries="@array/vibration_time"
+		android:entryValues="@array/vibration_time"
+		android:defaultValue="30"
+		android:dependency="dial_enable_haptic" />		
 		
 	<CheckBoxPreference
 		android:key="show_contact_pictures"
@@ -68,7 +78,9 @@
 		android:defaultValue="true" />
 		
 		
-	</PreferenceCategory>
+	
+
+</PreferenceCategory>
 	
 	<PreferenceCategory android:title="@string/category_smart_dial">				
 	<CheckBoxPreference

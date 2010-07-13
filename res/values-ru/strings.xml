@@ -13,7 +13,7 @@
     <string name="title_use_custom_color">Использовать свой цвет цифр</string>
     <string name="summaryon_custom_color">Формат: #RRGGBB или #AARRGGBB. </string>
     
-    <string name="category_dialer">Dialer</string>
+    <string name="category_dialer">Набор номера</string>
     <string name="title_enable_dial_tone">Тональные сигналы нажатия</string>
     <string name="title_enable_haptic_feedback">Включить вибрацию при нажатии</string>
     <string name="title_show_contact_pictures">Показывать фотографии</string>
@@ -65,4 +65,5 @@
 		<item>[8ШЩЪЫшщъы]</item>
 		<item>[9ЬЭЮЯьэюя]</item>
 	</string-array>
+	<string name="title_vibration_time">Длительность вибрации (милисек.)</string>
 </resources>
