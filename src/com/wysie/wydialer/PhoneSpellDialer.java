@@ -1142,13 +1142,18 @@ public class PhoneSpellDialer extends Activity implements OnScrollListener,
 		public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX,
 				               float velocityY)
 		{
-			if (velocityY < MIN_VELOCITY_DIP)
+			// Calculate required fling length. It's twice of digits view height.
+			int twice_height = digitsView.getHeight() * 2;
+			// Real fling length. 
+			// XXX What can I do with getYprecision() ?
+			int fling_length = (int)(Math.abs(e1.getY() - e2.getY()));
+
+			if (fling_length >= twice_height)
 			{
-				toggleDialpad(true);
-			} 
-			else if (velocityY > MIN_VELOCITY_RISE)
-			{
-				toggleDialpad(false);
+				if (velocityY < MIN_VELOCITY_DIP)
+					toggleDialpad(true);
+				else if (velocityY > MIN_VELOCITY_RISE)
+					toggleDialpad(false);
 			}
 			return super.onFling(e1, e2, velocityX, velocityY);
 		}
