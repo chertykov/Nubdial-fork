@@ -20,14 +20,12 @@
 <LinearLayout  xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="fill_parent"
     android:layout_height="wrap_content"
-    android:orientation="vertical"
->
+    android:orientation="vertical">
 
     <RelativeLayout
         android:layout_width="fill_parent"
         android:layout_height="?android:attr/listPreferredItemHeight"
-        android:paddingLeft="4dip"
-    >
+        android:paddingLeft="4dip">
 
         <LinearLayout android:id="@+id/right_side"
             android:layout_width="wrap_content"
@@ -45,9 +43,8 @@
                     android:layout_width="1px"
                     android:layout_height="fill_parent"
                     android:layout_marginTop="5dip"
-                    android:layout_marginBottom="5dip"
-                    android:background="@drawable/divider_vertical_dark"
-                />
+                    android:layout_marginBottom="5dip" />
+                <!-- android:background="@drawable/divider_vertical_dark"  -->
 
                 <ImageView android:id="@+id/call_button"
                     android:layout_width="wrap_content"
@@ -56,9 +53,9 @@
                     android:paddingRight="14dip"
                     android:layout_centerVertical="true"
                     android:gravity="center"
-                    android:src="@android:drawable/sym_action_call"
-                    android:background="@drawable/call_background"
-                />
+                    android:src="@android:drawable/sym_action_call" />
+                    <!--  android:background="@drawable/call_background" -->
+                
 
             </LinearLayout>
         </LinearLayout>
@@ -134,6 +131,6 @@
     <View android:id="@+id/list_divider"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:background="@*android:drawable/divider_horizontal_dark_opaque"
-    />
+        android:background="@*android:drawable/divider_horizontal_dark_opaque" />
+
 </LinearLayout>

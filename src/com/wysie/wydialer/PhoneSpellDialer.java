@@ -45,6 +45,8 @@ package com.wysie.wydialer;
 import java.text.Collator;
 import java.util.ArrayList;
 import java.util.TimerTask;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import android.app.Activity;
 import android.content.ContentUris;
@@ -147,6 +149,8 @@ public class PhoneSpellDialer extends Activity implements OnScrollListener,
 	private ContactListAdapter myAdapter;
 	private ListView myContactList;
 	private static String [] find_patterns;
+	private Pattern name_pattern = Pattern.compile("");
+	private Pattern number_pattern = Pattern.compile("");
 
 	private Handler mHandler = new Handler();
 	private UpdateTimerTask mUpdateTimeTask = new UpdateTimerTask();
@@ -420,16 +424,22 @@ public class PhoneSpellDialer extends Activity implements OnScrollListener,
 
 	private void createGlob()
 	{
+		String dp=""; 
 		char[] currInput = digitsView.getText().toString().toCharArray();
 		curFilter.setLength(0);
 
 		for (char c : currInput)
 		{
 			String s = buttonToGlobPiece(c);
-			Log.i ("buttonToGlobPiece", String.format("Arg char: %c ret: %s",
-					c, s));
 			curFilter.append(s);
+			if (dp.length() > 0)
+				dp += "-* *";
+			dp += c;
 		}
+		name_pattern = Pattern.compile(curFilter.toString());
+		number_pattern = Pattern.compile(dp);
+		
+		Log.i("number_pattern", String.format("dp: %s", dp));
 	}
 
 	private void updateFilter(boolean add)
@@ -748,6 +758,34 @@ public class PhoneSpellDialer extends Activity implements OnScrollListener,
 
 			return view;
 		}
+		
+		private void highlight_name(Spannable name, String digits)
+		{
+			if (digits.length() == 0)
+				return;
+			
+			Matcher m = name_pattern.matcher(name.toString());
+			
+			if (m.lookingAt())
+				applyHighlight(name, m.start(), m.end() - m.start());
+		}
+		
+		private void highlight_number(Spannable number, String digits)
+		{
+			if (digits.length() == 0)
+				return;
+			
+			number_pattern = Pattern.compile("97");
+			Matcher m = number_pattern.matcher(number.toString());
+			
+			Log.i("highlight_number", String.format("nstr: '%s'  p: '%s' at: %s", 
+													number.toString(),
+													number_pattern.toString(),
+													m.lookingAt() == true ? "true" : "false"));
+													
+			if (m.lookingAt())
+				applyHighlight(number, m.start(), m.end() - m.start());
+		}
 
 		@Override
 		public void bindView(View view, Context context, Cursor cursor)
@@ -763,9 +801,10 @@ public class PhoneSpellDialer extends Activity implements OnScrollListener,
 			// Set the name
 			final String name = cursor.getString(DISPLAY_NAME_INDEX);
 			cache.nameView.setText(name, TextView.BufferType.SPANNABLE);
-			highlightName((Spannable) cache.nameView.getText(), digitsView
-					.getText().toString(), false);
-
+			
+			highlight_name((Spannable) cache.nameView.getText(),
+						   digitsView.getText().toString());
+			
 			if (!cursor.isNull(PHONE_TYPE_INDEX))
 			{
 				cache.labelView.setVisibility(View.VISIBLE);
@@ -783,8 +822,12 @@ public class PhoneSpellDialer extends Activity implements OnScrollListener,
 
 			final String number = cursor.getString(PHONE_NUMBER_INDEX);
 			cache.dataView.setText(number, TextView.BufferType.SPANNABLE);
-			highlightName((Spannable) cache.dataView.getText(), digitsView
-					.getText().toString(), true);
+
+			highlight_number((Spannable) cache.dataView.getText(),
+							 digitsView.getText().toString());
+
+//			highlightName((Spannable) cache.dataView.getText(), digitsView
+//					.getText().toString(), true);
 
 			cache.callButton.setTag(number);
 			Uri lookupUri = contactSplit.getLookupUri(cursor);
@@ -1138,6 +1181,16 @@ public class PhoneSpellDialer extends Activity implements OnScrollListener,
 		private static final float MIN_VELOCITY_DIP = -100.0f;
 		private static final float MIN_VELOCITY_RISE = 100.0f;
 
+		@Override
+		public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX,
+				               float distanceY)
+		{
+			Log.i("onScroll e1", e1.toString());
+			Log.i("onScroll e1", e2.toString());
+			Log.i("onScroll", String.format("e1 getYprecision: %g", e1.getYPrecision()));
+			return super.onScroll(e1, e2, distanceX, distanceY);
+		}
+		
 		@Override
 		public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX,
 				               float velocityY)

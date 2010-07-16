@@ -21,6 +21,6 @@
     <item android:state_focused="false" android:state_pressed="true"
         android:drawable="@*android:drawable/list_selector_background_transition" />
     <item android:state_focused="false" android:state_pressed="false"
-        android:drawable="@android:drawable/screen_background_dark"/>
+        android:drawable="@*android:drawable/screen_background_dark"/>
 
 </selector>
