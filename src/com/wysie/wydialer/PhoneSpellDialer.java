@@ -43,7 +43,6 @@
 package com.wysie.wydialer;
 
 import java.text.Collator;
-import java.util.ArrayList;
 import java.util.TimerTask;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -146,6 +145,8 @@ public class PhoneSpellDialer extends Activity implements OnScrollListener,
 	private MenuItem mAddToContacts;
 
 	private StringBuilder curFilter;
+	private StringBuilder num_pat;
+	private StringBuilder name_pat;
 	private ContactListAdapter myAdapter;
 	private ListView myContactList;
 	private static String [] find_patterns;
@@ -182,6 +183,9 @@ public class PhoneSpellDialer extends Activity implements OnScrollListener,
 		myAdapter = new ContactListAdapter(this, null,
 				                           contactAccessor.getContactSplit());
 		curFilter = new StringBuilder();
+		num_pat = new StringBuilder();
+		name_pat = new StringBuilder();
+		
 
 		// scott
 
@@ -424,22 +428,39 @@ public class PhoneSpellDialer extends Activity implements OnScrollListener,
 
 	private void createGlob()
 	{
-		String dp=""; 
 		char[] currInput = digitsView.getText().toString().toCharArray();
+		
 		curFilter.setLength(0);
+		num_pat.setLength(0);
+		name_pat.setLength(0);
+		
 
 		for (char c : currInput)
 		{
-			String s = buttonToGlobPiece(c);
-			curFilter.append(s);
-			if (dp.length() > 0)
-				dp += "-* *";
-			dp += c;
+			// Support the dashes or spaces in phone number.
+			if (num_pat.length() > 0)
+				num_pat.append("[- ]*");
+			
+			if (c == '*')
+			{
+				name_pat.append(".");
+				num_pat.append(".");
+			}
+			else if (c == '+')
+			{
+				name_pat.append("[+]");
+				num_pat.append("[+]");
+			}
+			else
+			{
+				name_pat.append(buttonToGlobPiece(c));
+				num_pat.append(c);
+			}
+			curFilter.append(buttonToGlobPiece(c));
 		}
-		name_pattern = Pattern.compile(curFilter.toString());
-		number_pattern = Pattern.compile(dp);
 		
-		Log.i("number_pattern", String.format("dp: %s", dp));
+		name_pattern = Pattern.compile(name_pat.toString());
+		number_pattern = Pattern.compile(num_pat.toString());
 	}
 
 	private void updateFilter(boolean add)
@@ -759,34 +780,17 @@ public class PhoneSpellDialer extends Activity implements OnScrollListener,
 			return view;
 		}
 		
-		private void highlight_name(Spannable name, String digits)
+		private void highlight(Pattern pat, Spannable str, String digits)
 		{
 			if (digits.length() == 0)
 				return;
 			
-			Matcher m = name_pattern.matcher(name.toString());
+			Matcher m = pat.matcher(str.toString());
 			
-			if (m.lookingAt())
-				applyHighlight(name, m.start(), m.end() - m.start());
+			if (m.find(0))
+				applyHighlight(str, m.start(), m.end() - m.start());
 		}
 		
-		private void highlight_number(Spannable number, String digits)
-		{
-			if (digits.length() == 0)
-				return;
-			
-			number_pattern = Pattern.compile("97");
-			Matcher m = number_pattern.matcher(number.toString());
-			
-			Log.i("highlight_number", String.format("nstr: '%s'  p: '%s' at: %s", 
-													number.toString(),
-													number_pattern.toString(),
-													m.lookingAt() == true ? "true" : "false"));
-													
-			if (m.lookingAt())
-				applyHighlight(number, m.start(), m.end() - m.start());
-		}
-
 		@Override
 		public void bindView(View view, Context context, Cursor cursor)
 		{
@@ -802,8 +806,8 @@ public class PhoneSpellDialer extends Activity implements OnScrollListener,
 			final String name = cursor.getString(DISPLAY_NAME_INDEX);
 			cache.nameView.setText(name, TextView.BufferType.SPANNABLE);
 			
-			highlight_name((Spannable) cache.nameView.getText(),
-						   digitsView.getText().toString());
+			highlight(name_pattern, (Spannable) cache.nameView.getText(),
+					  digitsView.getText().toString());
 			
 			if (!cursor.isNull(PHONE_TYPE_INDEX))
 			{
@@ -823,11 +827,8 @@ public class PhoneSpellDialer extends Activity implements OnScrollListener,
 			final String number = cursor.getString(PHONE_NUMBER_INDEX);
 			cache.dataView.setText(number, TextView.BufferType.SPANNABLE);
 
-			highlight_number((Spannable) cache.dataView.getText(),
-							 digitsView.getText().toString());
-
-//			highlightName((Spannable) cache.dataView.getText(), digitsView
-//					.getText().toString(), true);
+			highlight(number_pattern, (Spannable) cache.dataView.getText(),
+					  digitsView.getText().toString());
 
 			cache.callButton.setTag(number);
 			Uri lookupUri = contactSplit.getLookupUri(cursor);
@@ -910,202 +911,10 @@ public class PhoneSpellDialer extends Activity implements OnScrollListener,
 		return photoBm;
 	}
 
-	private static char normalize(final char alpha)
-	{
-		if (alpha == '\u00df')
-		{ // &szlig;
-			return 's';
-		}
-		if (alpha == '\u00f8' || alpha == '\u00d8')
-		{ // &oslash; / &Oslash;
-			return 'o';
-		}
-		final String source = new String(new char[]
-		{ alpha });
-		final int compA = COLLATOR.compare(source, NORM_STRINGS[0]);
-		if (compA == 0)
-		{
-			return 'a';
-		}
-		final int compZ = COLLATOR.compare(source,
-				NORM_STRINGS[NORM_STRINGS.length - 1]);
-		if (compZ == 0)
-		{
-			return 'z';
-		}
-		if (compA < 0 || compZ > 0)
-		{
-			return alpha;
-		}
-		for (char b = 'a' + 1; b < 'z'; b++)
-		{
-			if (COLLATOR.compare(source, NORM_STRINGS[b - 'a']) == 0)
-			{
-				return b;
-			}
-		}
-		return alpha;
-	}
-
-	private static char mapToPhone(char alpha)
-	{
-		if (Character.isDigit(alpha) || alpha == '+')
-			return alpha;
-
-		if (alpha == ' ')
-			return '#';
-
-		char c = normalize(alpha);
-		if (c < 'a' || c > 'z')
-			return 0;
-		if (c <= 'o')
-		{
-			int x = (c - 'a') / 3;
-			return (char) ('2' + x);
-		} 
-		else if (c >= 'p' && c <= 's')
-		{
-			return '7';
-		} 
-		else if (c >= 't' && c <= 'v')
-		{
-			return '8';
-		} else
-		{
-			return '9';
-		}
-	}
-
-	/**
-	 * Return the next match of pattern starting at 'offset', or -1 if there's
-	 * no next match.
-	 */
-
-	private static int[] nextMatch(Spannable name, String pattern,
-			boolean isNumber)
-	{
-		ArrayList<Integer> offsets = new ArrayList<Integer>();
-		String n = name.toString();
-		int k = 0;
-		boolean match = true;
-
-		if (isNumber)
-		{
-			pattern = pattern.replaceAll("-", "");
-		}
-
-		int[] result = new int[2];
-		result[0] = -1; // start index of pattern matching
-		result[1] = pattern.length(); // end index of pattern matching
-
-		offsets.add(k);
-		while (true)
-		{
-			k = n.indexOf(" ", k + 1);
-			if (k != -1)
-				offsets.add(k + 1);
-			else
-				break;
-		}
-
-		for (int j = 0; j < offsets.size(); j++)
-		{
-
-			if (mapToPhone(name.charAt(offsets.get(j))) == pattern.charAt(0))
-			{
-				match = true;
-				result[0] = offsets.get(j);
-			}
-
-			if (match)
-			{
-				int currPos = offsets.get(j);
-				for (int i = 0; i < pattern.length(); i++)
-				{
-					try
-					{
-						if (mapToPhone(name.charAt(currPos)) 
-							!= pattern.charAt(i))
-						{
-							if (name.charAt(currPos) == '-')
-							{
-								result[1]++;
-								i--;
-							} 
-							else
-							{
-								match = false;
-								result[0] = -1;
-								result[1] = pattern.length();
-								break;
-							}
-						}
-					} 
-					catch (StringIndexOutOfBoundsException e)
-					{
-						match = false;
-						result[0] = -1;
-						result[1] = pattern.length();
-					}
-					currPos++;
-				}
-			}
-
-			if (match)
-			{
-				break;
-			}
-		}
-
-		// Wysie: If all the above fail, check if it's matchAnywhere iff it's a
-		// number
-		if (!match && matchAnywhere && isNumber)
-		{
-			int length = name.length() - pattern.length() + 1;
-			for (int j = 0; j < length; j++)
-			{
-				if (name.charAt(j) == pattern.charAt(0))
-				{
-					match = true;
-					int currPos = j;
-					for (int i = 0; i < pattern.length(); i++)
-					{
-						if (name.charAt(currPos) != pattern.charAt(i))
-						{
-							if (name.charAt(currPos) == '-')
-							{
-								result[1]++;
-								i--;
-							} 
-							else
-							{
-								match = false;
-								result[0] = -1;
-								result[1] = pattern.length();
-								break;
-							}
-						}
-						currPos++;
-					}
-				}
-
-				if (match)
-				{
-					result[0] = j;
-					break;
-				}
-			}
-		}
-
-		return result;
-	}
-
 	private static void applyHighlight(Spannable name, int start, int len)
 	{
 		if (len == 0)
 			return;
-		Log.d("SPANNABLE NAME", "" + name);
-
 		if (matchedItalics)
 		{
 			name.setSpan(ITALIC_STYLE, start, start + len,
@@ -1128,19 +937,6 @@ public class PhoneSpellDialer extends Activity implements OnScrollListener,
 		{
 			name.setSpan(matchedHighlightColor, start, start + len,
 					Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-		}
-	}
-
-	private static void highlightName(Spannable name, String pattern,
-			boolean isNumber)
-	{
-		if (pattern.length() == 0)
-			return;
-
-		int[] match = nextMatch(name, pattern, isNumber);
-		if (match[0] != -1)
-		{
-			applyHighlight(name, match[0], match[1]);
 		}
 	}
 
@@ -1185,9 +981,6 @@ public class PhoneSpellDialer extends Activity implements OnScrollListener,
 		public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX,
 				               float distanceY)
 		{
-			Log.i("onScroll e1", e1.toString());
-			Log.i("onScroll e1", e2.toString());
-			Log.i("onScroll", String.format("e1 getYprecision: %g", e1.getYPrecision()));
 			return super.onScroll(e1, e2, distanceX, distanceY);
 		}
 		
@@ -1229,6 +1022,8 @@ public class PhoneSpellDialer extends Activity implements OnScrollListener,
 	{
 		if (find_patterns.length > 0 && c > '0' && c <= '9')
 		{
+			if (c == '*')
+				return "?";
 			int index = c -'1';
 			return find_patterns[index];
 		}
@@ -1381,10 +1176,7 @@ public class PhoneSpellDialer extends Activity implements OnScrollListener,
 			Cursor cur = PhoneSpellDialer.this.contactAccessor.recalculate(
 					filter[0], matchAnywhere);
 
-			Log.i("SearchContactsTask.doInBackground", 
-				  String.format("cur count: %d", cur.getCount()));
-
-			return cur;// cur;
+			return cur;
 		}
 
 		protected void onProgressUpdate(Integer... progress)
