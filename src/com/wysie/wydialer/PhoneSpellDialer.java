@@ -129,6 +129,7 @@ public class PhoneSpellDialer extends Activity implements OnScrollListener,
 	private Vibrator mVibrator;
 	private boolean prefVibrateOn;
 	private static int vibrate_time;
+	private static boolean dialpad_visible = true;
 
 	private static final StyleSpan ITALIC_STYLE = new StyleSpan(
 			android.graphics.Typeface.ITALIC);
@@ -618,10 +619,12 @@ public class PhoneSpellDialer extends Activity implements OnScrollListener,
 		case R.id.digitsText:
 		{
 			digitsView.setCursorVisible(false);
+			
 			if (digitsView.length() != 0)
-			{
 				digitsView.setCursorVisible(true);
-			}
+
+			if (dialpad_visible == false)
+				toggleDialpad(true);
 			break;
 		}
 
@@ -652,36 +655,36 @@ public class PhoneSpellDialer extends Activity implements OnScrollListener,
 		boolean result = false;
 		switch (view.getId())
 		{
-		case R.id.button0:
-		{
-			keyPressed(KeyEvent.KEYCODE_PLUS);
-			result = true;
-			updateFilter(true);
-			break;
-		}
-		case R.id.button1:
-		{
-			if (digitsView.length() == 0)
+			case R.id.button0:
 			{
-				if (hasVoicemail())
-				{
-					Intent i = new Intent(Intent.ACTION_CALL);
-					i.setData(Uri.parse("voicemail:"));
-					startActivity(i);
-					result = true;
-					ImageButton digitOne = (ImageButton) findViewById(R.id.button1);
-					digitOne.setPressed(false);
-				}
+				keyPressed(KeyEvent.KEYCODE_PLUS);
+				result = true;
+				updateFilter(true);
+				break;
 			}
-			break;
-		}
-		case R.id.deleteButton:
-		{
-			removeAll();
-			deleteButton.setPressed(false);
-			result = true;
-			break;
-		}
+			case R.id.button1:
+			{
+				if (digitsView.length() == 0)
+				{
+					if (hasVoicemail())
+					{
+						Intent i = new Intent(Intent.ACTION_CALL);
+						i.setData(Uri.parse("voicemail:"));
+						startActivity(i);
+						result = true;
+						ImageButton digitOne = (ImageButton) findViewById(R.id.button1);
+						digitOne.setPressed(false);
+					}
+				}
+				break;
+			}
+			case R.id.deleteButton:
+			{
+				removeAll();
+				deleteButton.setPressed(false);
+				result = true;
+				break;
+			}
 		}
 		toggleDrawable();
 		return result;
@@ -1011,10 +1014,12 @@ public class PhoneSpellDialer extends Activity implements OnScrollListener,
 		if (showDialPad)
 		{
 			dialPad.setVisibility(View.VISIBLE);
+			dialpad_visible = true;
 		} 
 		else
 		{
 			dialPad.setVisibility(View.GONE);
+			dialpad_visible = false;
 		}
 	}
 
