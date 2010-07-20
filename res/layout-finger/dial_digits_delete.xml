@@ -15,7 +15,8 @@
         android:layout_gravity="center_vertical"
         android:state_enabled="false"
         android:background="@drawable/btn_digits_left"
-        android:src="@drawable/ic_dial_action_call" />
+        android:src="@drawable/ic_dial_action_call" 
+        android:soundEffectsEnabled="false" />
 
 	<EditText android:id="@+id/digitsText"
 		android:layout_width="0dip"
@@ -30,6 +31,7 @@
 		android:focusableInTouchMode="true"
 		android:editable="true"
 		android:cursorVisible="false"
+		android:soundEffectsEnabled="false"
 	/>
         
     <ImageButton android:id="@+id/deleteButton"
@@ -38,5 +40,6 @@
         android:layout_gravity="center_vertical"
         android:state_enabled="false"
         android:background="@drawable/btn_digits_right"
-        android:src="@drawable/ic_dial_action_delete" />
+        android:src="@drawable/ic_dial_action_delete" 
+        android:soundEffectsEnabled="false" />
 </LinearLayout>

@@ -14,10 +14,11 @@
     <string name="summaryon_custom_color">Формат: #RRGGBB или #AARRGGBB. </string>
     
     <string name="category_dialer">Набор номера</string>
+    <string name="title_click_sound">Системный звук нажатия</string>
     <string name="title_enable_dial_tone">Тональные сигналы нажатия</string>
-    <string name="title_enable_haptic_feedback">Включить вибрацию при нажатии</string>
+    <string name="title_enable_haptic_feedback">Вибрация при нажатии</string>
     <string name="title_show_contact_pictures">Показывать фотографии</string>
-    <string name="title_hide_dialpad_on_fling">Auto-hide dialpad on fling</string>
+    <string name="title_hide_dialpad_on_fling">Скрыть клаватуру при прокрутке</string>
     
     <string name="category_smart_dial">Поиск T9</string>
 	<string name="title_matched_italics">Выделять наклонным шрифтом найденное</string>

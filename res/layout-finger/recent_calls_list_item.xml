@@ -48,6 +48,7 @@
                     android:gravity="center"
                     android:src="@android:drawable/sym_action_call"
                     android:background="@drawable/call_background"
+                    android:soundEffectsEnabled="false"
                 />
 
             </LinearLayout>
@@ -87,14 +88,16 @@
     <android.widget.QuickContactBadge android:id="@+id/photo"
         android:layout_alignParentLeft="true"
         android:layout_centerVertical="true"
-        style="@*android:style/Widget.QuickContactBadge.WindowMedium" />
+        style="@*android:style/Widget.QuickContactBadge.WindowMedium"
+        android:soundEffectsEnabled="false" />
     />
     
     <ImageView android:id="@+id/noQuickContactPhoto"
         android:layout_alignParentLeft="true"
         android:layout_centerVertical="true"            
         style="@*android:style/Widget.QuickContactBadge.WindowMedium"
-        android:background="@null" />
+        android:background="@null"
+        android:soundEffectsEnabled="false" />
     />
 
     <TextView android:id="@+id/name"
@@ -111,6 +114,7 @@
         android:singleLine="true"
         android:ellipsize="marquee"
         android:gravity="center_vertical"
+        android:soundEffectsEnabled="false"
     />
 
 </RelativeLayout>

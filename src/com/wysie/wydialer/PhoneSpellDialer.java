@@ -84,6 +84,7 @@ import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
+import android.view.SoundEffectConstants;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.GestureDetector.SimpleOnGestureListener;
@@ -128,7 +129,9 @@ public class PhoneSpellDialer extends Activity implements OnScrollListener,
 			matchedDigits, matchedHighlight, noMatches = false;
 	private Vibrator mVibrator;
 	private boolean prefVibrateOn;
-	private static int vibrate_time;
+	private static int pref_vibrate_time;
+	private static boolean pref_click_sound;
+	
 	private static boolean dialpad_visible = true;
 
 	private static final StyleSpan ITALIC_STYLE = new StyleSpan(
@@ -138,6 +141,7 @@ public class PhoneSpellDialer extends Activity implements OnScrollListener,
 	private static BackgroundColorSpan matchedHighlightColor;
 	private static ForegroundColorSpan matchedDigitsColor;
 
+	private View top_view; 
 	private Drawable mDigitsBackground;
 	private Drawable mDigitsEmptyBackground;
 	private EditText digitsView;
@@ -201,6 +205,7 @@ public class PhoneSpellDialer extends Activity implements OnScrollListener,
 		myContactList = (ListView) findViewById(R.id.contactlist);
 		myContactList.setOnCreateContextMenuListener(this);
 		myContactList.setAdapter(myAdapter);
+		top_view = findViewById(R.id.toplevel);
 		setHandlers();
 		setPreferences();
 
@@ -229,7 +234,8 @@ public class PhoneSpellDialer extends Activity implements OnScrollListener,
 		hideDialpadOnScroll = prefs.getBoolean("auto_hide_dialpad_on_fling",
 				true);
 		setDigitsColor(prefs);
-		vibrate_time = Integer.parseInt(prefs.getString("vibration_time", "30"));
+		pref_vibrate_time = Integer.parseInt(prefs.getString("vibration_time", "30"));
+		pref_click_sound = prefs.getBoolean("click_sound", true);
 
 		ImageButton digitOne = (ImageButton) findViewById(R.id.button1);
 		if (hasVoicemail())
@@ -519,6 +525,10 @@ public class PhoneSpellDialer extends Activity implements OnScrollListener,
 
 	public void onClick(View view)
 	{
+		if (pref_click_sound)
+			top_view.playSoundEffect(SoundEffectConstants.CLICK);
+		vibrate();
+		
 		switch (view.getId())
 		{
 		case R.id.button0:
@@ -618,10 +628,11 @@ public class PhoneSpellDialer extends Activity implements OnScrollListener,
 		}
 		case R.id.digitsText:
 		{
-			digitsView.setCursorVisible(false);
 			
 			if (digitsView.length() != 0)
 				digitsView.setCursorVisible(true);
+			else
+				digitsView.setCursorVisible(false);
 
 			if (dialpad_visible == false)
 				toggleDialpad(true);
@@ -635,16 +646,8 @@ public class PhoneSpellDialer extends Activity implements OnScrollListener,
 			{
 				Uri telUri = Uri.fromParts("tel", number, null);
 				startActivity(new Intent(Intent.ACTION_CALL, telUri));
-				curFilter.setLength(0);
-				digitsView.getText().clear();
-				noMatches = false;
 			}
 			return;
-		}
-		case R.id.name:
-		{
-			Uri lookupUri = (Uri) view.getTag();
-			startContactActivity(lookupUri);
 		}
 		}
 		toggleDrawable();
@@ -693,17 +696,14 @@ public class PhoneSpellDialer extends Activity implements OnScrollListener,
 	void playTone(int tone)
 	{
 		if (!mDTMFToneEnabled)
-		{
 			return;
-		}
 
 		AudioManager audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
 		int ringerMode = audioManager.getRingerMode();
-		if ((ringerMode == AudioManager.RINGER_MODE_SILENT)
-				|| (ringerMode == AudioManager.RINGER_MODE_VIBRATE))
-		{
+
+		if (ringerMode == AudioManager.RINGER_MODE_SILENT
+			|| ringerMode == AudioManager.RINGER_MODE_VIBRATE)
 			return;
-		}
 
 		synchronized (mToneGeneratorLock)
 		{
@@ -718,7 +718,6 @@ public class PhoneSpellDialer extends Activity implements OnScrollListener,
 
 	private void keyPressed(int keyCode)
 	{
-		vibrate();
 		KeyEvent event = new KeyEvent(KeyEvent.ACTION_DOWN, keyCode);
 		digitsView.onKeyDown(keyCode, event);
 	}
@@ -726,7 +725,7 @@ public class PhoneSpellDialer extends Activity implements OnScrollListener,
 	private synchronized void vibrate()
 	{
 		if (prefVibrateOn)
-			mVibrator.vibrate(vibrate_time);
+			mVibrator.vibrate(pref_vibrate_time);
 	}
 
 	// Listeners for the list items.
@@ -742,6 +741,11 @@ public class PhoneSpellDialer extends Activity implements OnScrollListener,
 	public void onItemClick(AdapterView<?> parent, View view, int position,
 			long rowid)
 	{
+		if (pref_click_sound)
+			view.playSoundEffect(SoundEffectConstants.CLICK);
+
+		vibrate();
+		
 		ContactListItemCache contact = (ContactListItemCache) view.getTag();
 		startContactActivity(contact.lookupUri);
 	}
@@ -775,8 +779,9 @@ public class PhoneSpellDialer extends Activity implements OnScrollListener,
 			cache.labelView = (TextView) view.findViewById(R.id.label);
 			cache.dataView = (TextView) view.findViewById(R.id.data);
 			cache.photoView = (QuickContactBadge) view.findViewById(R.id.photo);
-			cache.nonQuickContactPhotoView = (ImageView) view
-					.findViewById(R.id.noQuickContactPhoto);
+//			cache.photoView.setOnClickListener(PhoneSpellDialer.this);
+			cache.nonQuickContactPhotoView 
+			   = (ImageView) view.findViewById(R.id.noQuickContactPhoto);
 
 			view.setTag(cache);
 
@@ -995,21 +1000,36 @@ public class PhoneSpellDialer extends Activity implements OnScrollListener,
 			int twice_height = digitsView.getHeight() * 2;
 			// Real fling length. 
 			// XXX What can I do with getYprecision() ?
-			int fling_length = (int)(Math.abs(e1.getY() - e2.getY()));
+			int fling_y_length = (int)(Math.abs(e1.getY() - e2.getY()));
+			int fling_x_length = (int)(Math.abs(e1.getX() - e2.getX()));
 
-			if (fling_length >= twice_height)
+			if (fling_y_length >= twice_height)
 			{
 				if (velocityY < MIN_VELOCITY_DIP)
 					toggleDialpad(true);
 				else if (velocityY > MIN_VELOCITY_RISE)
 					toggleDialpad(false);
 			}
+			else if (fling_x_length >= twice_height)
+			{
+				if (velocityX < MIN_VELOCITY_DIP)
+				{
+					vibrate();
+					keyPressed(KeyEvent.KEYCODE_DEL);
+					updateFilter(false);
+				}
+			}
+			
 			return super.onFling(e1, e2, velocityX, velocityY);
 		}
 	}
 
 	private void toggleDialpad(boolean showDialPad)
 	{
+		if (showDialPad == dialpad_visible)
+			return;
+		
+		vibrate();
 		View dialPad = findViewById(R.id.keypad);
 		if (showDialPad)
 		{

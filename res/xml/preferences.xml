@@ -48,6 +48,11 @@
         </PreferenceScreen>
         
 	<CheckBoxPreference
+		android:key="click_sound"
+		android:title="@string/title_click_sound"
+		android:defaultValue="true" />
+	
+	<CheckBoxPreference
 		android:key="dial_enable_dial_tone"
 		android:title="@string/title_enable_dial_tone"
 		android:defaultValue="false" />

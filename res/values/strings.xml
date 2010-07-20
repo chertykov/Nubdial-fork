@@ -14,6 +14,7 @@
     <string name="summaryon_custom_color">Supported formats: #RRGGBB or #AARRGGBB. Input the # as well.</string>
     
     <string name="category_dialer">Dialer</string>
+    <string name="title_click_sound">Play system click sound</string>
     <string name="title_enable_dial_tone">Enable dial tone</string>
     <string name="title_enable_haptic_feedback">Enable haptic feedback</string>
     <string name="title_show_contact_pictures">Show contact pictures</string>
