@@ -48,6 +48,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import android.app.Activity;
+import android.content.ContentResolver;
 import android.content.ContentUris;
 import android.content.Context;
 import android.content.Intent;
@@ -227,12 +228,12 @@ public class PhoneSpellDialer extends Activity implements OnScrollListener,
     matchedBold = prefs.getBoolean("matched_bold", true);
     matchedDigits = prefs.getBoolean("matched_colour", false);
     i = Integer.parseInt(prefs.getString("matched_colour_choice",
-					      "-16777216"));
+					 "-16777216"));
     matchedDigitsColor = new ForegroundColorSpan(i);
 						 
     matchedHighlight = prefs.getBoolean("matched_highlight", true);
     i = Integer.parseInt(prefs.getString("matched_highlight_choice",
-						"-3355444"))
+					 "-3355444"));
     matchedHighlightColor = new BackgroundColorSpan(i);
     matchAnywhere = prefs.getBoolean("match_num_sequence", true);
     showContactPictures = prefs.getBoolean("show_contact_pictures", true);
