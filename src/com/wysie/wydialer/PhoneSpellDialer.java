@@ -42,7 +42,6 @@
 
 package com.wysie.wydialer;
 
-import java.text.Collator;
 import java.util.TimerTask;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -79,6 +78,7 @@ import android.text.method.DialerKeyListener;
 import android.text.style.BackgroundColorSpan;
 import android.text.style.ForegroundColorSpan;
 import android.text.style.StyleSpan;
+import android.util.AttributeSet;
 import android.util.Log;
 import android.view.GestureDetector;
 import android.view.KeyEvent;
@@ -128,8 +128,8 @@ public class PhoneSpellDialer extends Activity implements OnScrollListener,
   private static boolean hideDialpadOnScroll, showContactPictures,
     matchAnywhere, mDTMFToneEnabled, matchedItalics, matchedBold,
     matchedDigits, matchedHighlight, noMatches = false;
-  private Vibrator mVibrator;
-  private boolean prefVibrateOn;
+  private static Vibrator mVibrator;
+  private static boolean prefVibrateOn;
   private static int pref_vibrate_time;
   private static boolean pref_click_sound;
 	
@@ -142,7 +142,7 @@ public class PhoneSpellDialer extends Activity implements OnScrollListener,
   private static BackgroundColorSpan matchedHighlightColor;
   private static ForegroundColorSpan matchedDigitsColor;
 
-  private View top_view; 
+  private static View top_view; 
   private Drawable mDigitsBackground;
   private Drawable mDigitsEmptyBackground;
   private EditText digitsView;
@@ -161,17 +161,6 @@ public class PhoneSpellDialer extends Activity implements OnScrollListener,
 
   private Handler mHandler = new Handler();
   private UpdateTimerTask mUpdateTimeTask = new UpdateTimerTask();
-
-  private static final Collator COLLATOR = Collator.getInstance();
-  private static final String[] NORM_STRINGS = new String['z' - 'a' + 1];
-  {
-    COLLATOR.setStrength(Collator.PRIMARY);
-    for (char b = 'a'; b <= 'z'; b++)
-      {
-	NORM_STRINGS[b - 'a'] = new String(new char[]
-	  { b });
-      }
-  }
 
   /** Called when the activity is first created. */
   @Override
@@ -527,9 +516,8 @@ public class PhoneSpellDialer extends Activity implements OnScrollListener,
 
   public void onClick(View view)
   {
-    if (pref_click_sound)
-      top_view.playSoundEffect(SoundEffectConstants.CLICK);
-    vibrate();
+    click_sound ();
+    vibrate ();
 		
     switch (view.getId())
       {
@@ -724,12 +712,18 @@ public class PhoneSpellDialer extends Activity implements OnScrollListener,
     digitsView.onKeyDown(keyCode, event);
   }
 
-  private synchronized void vibrate()
+  static synchronized void vibrate()
   {
     if (prefVibrateOn)
       mVibrator.vibrate(pref_vibrate_time);
   }
 
+  static synchronized void click_sound ()
+  {
+    if (pref_click_sound)
+      top_view.playSoundEffect (SoundEffectConstants.CLICK);
+  }
+  
   // Listeners for the list items.
   private void startContactActivity(Uri lookupUri)
   {
@@ -743,10 +737,8 @@ public class PhoneSpellDialer extends Activity implements OnScrollListener,
   public void onItemClick(AdapterView<?> parent, View view, int position,
 			  long rowid)
   {
-    if (pref_click_sound)
-      view.playSoundEffect(SoundEffectConstants.CLICK);
-
-    vibrate();
+    click_sound ();
+    vibrate ();
 		
     ContactListItemCache contact = (ContactListItemCache) view.getTag();
     startContactActivity(contact.lookupUri);
@@ -790,7 +782,7 @@ public class PhoneSpellDialer extends Activity implements OnScrollListener,
       return view;
     }
 		
-    private void highlight(Pattern pat, Spannable str, String digits)
+    private void highlight (Pattern pat, Spannable str, String digits)
     {
       if (digits.length() == 0)
 	return;
@@ -798,7 +790,7 @@ public class PhoneSpellDialer extends Activity implements OnScrollListener,
       Matcher m = pat.matcher(str.toString());
 			
       if (m.find(0))
-	applyHighlight(str, m.start(), m.end() - m.start());
+	apply_highlight(str, m.start(), m.end() - m.start());
     }
 		
     @Override
@@ -871,8 +863,8 @@ public class PhoneSpellDialer extends Activity implements OnScrollListener,
 	    } 
 	  else
 	    {
-	      cache.photoView
-		.setImageResource(R.drawable.ic_contact_list_picture);
+	      cache.photoView.setImageResource(R.drawable
+					       .ic_contact_list_picture);
 	    }
 	}
       else
@@ -921,33 +913,26 @@ public class PhoneSpellDialer extends Activity implements OnScrollListener,
     return photoBm;
   }
 
-  private static void applyHighlight(Spannable name, int start, int len)
+  private static void apply_highlight(Spannable name, int start, int end)
   {
     if (len == 0)
       return;
+    
     if (matchedItalics)
-      {
-	name.setSpan(ITALIC_STYLE, start, start + len,
-		     Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-      }
+      name.setSpan(ITALIC_STYLE, start, end,
+		   Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
 
     if (matchedBold)
-      {
-	name.setSpan(BOLD_STYLE, start, start + len,
-		     Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-      }
+      name.setSpan(BOLD_STYLE, start, end,
+		   Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
 
     if (matchedDigits)
-      {
-	name.setSpan(matchedDigitsColor, start, start + len,
-		     Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-      }
+      name.setSpan(matchedDigitsColor, start, end,
+		   Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
 
     if (matchedHighlight)
-      {
-	name.setSpan(matchedHighlightColor, start, start + len,
-		     Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-      }
+      name.setSpan(matchedHighlightColor, start, end,
+		   Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
   }
 
   private void toggleDrawable()
@@ -1029,8 +1014,9 @@ public class PhoneSpellDialer extends Activity implements OnScrollListener,
   {
     if (showDialPad == dialpad_visible)
       return;
-		
+
     vibrate();
+    
     View dialPad = findViewById(R.id.keypad);
     if (showDialPad)
       {
@@ -1162,7 +1148,6 @@ public class PhoneSpellDialer extends Activity implements OnScrollListener,
 	startManagingCursor(cur);
 	myAdapter = new ContactListAdapter(this, cur,
 					   contactAccessor.getContactSplit());
-
       }
     else
       {
@@ -1236,7 +1221,24 @@ public class PhoneSpellDialer extends Activity implements OnScrollListener,
 			
       new SearchContactsTask().execute(s);
 			
-      // Log.i("scott: timer", "Excute Timer:".concat(s));
+      // Log.i("scott: timer", "Execute Timer:".concat(s));
+    }
+  }
+
+  // Declare custom class to produce click sound and vibration.
+  public static class QuickContactBadgeClick extends QuickContactBadge
+  {
+    public QuickContactBadgeClick (Context context, AttributeSet attrs)
+    {
+      super (context, attrs);
+    }
+    
+    @Override
+    public void onClick (View view)
+    {
+      PhoneSpellDialer.click_sound();
+      PhoneSpellDialer.vibrate();
+      super.onClick (view);
     }
   }
 }

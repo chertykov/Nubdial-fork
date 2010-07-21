@@ -85,7 +85,9 @@
         android:textAppearance="?android:attr/textAppearanceSmall"
     />
     
-    <android.widget.QuickContactBadge android:id="@+id/photo"
+    <view
+    	class = "com.wysie.wydialer.PhoneSpellDialer$QuickContactBadgeClick"
+    	android:id="@+id/photo"
         android:layout_alignParentLeft="true"
         android:layout_centerVertical="true"
         style="@*android:style/Widget.QuickContactBadge.WindowMedium"
