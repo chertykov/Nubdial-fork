@@ -915,7 +915,7 @@ public class PhoneSpellDialer extends Activity implements OnScrollListener,
 
   private static void apply_highlight(Spannable name, int start, int end)
   {
-    if (len == 0)
+    if (start == end)
       return;
     
     if (matchedItalics)
