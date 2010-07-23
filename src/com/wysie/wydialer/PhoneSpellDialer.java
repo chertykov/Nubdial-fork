@@ -790,7 +790,7 @@ public class PhoneSpellDialer extends Activity implements OnScrollListener,
       Matcher m = pat.matcher(str.toString());
 			
       if (m.find(0))
-	apply_highlight(str, m.start(), m.end() - m.start());
+	apply_highlight (str, m.start(), m.end());
     }
 		
     @Override
