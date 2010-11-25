@@ -727,8 +727,7 @@ public class PhoneSpellDialer extends Activity implements OnScrollListener,
   // Listeners for the list items.
   private void startContactActivity(Uri lookupUri)
   {
-    Uri contactUri = contactAccessor.getContactSplit().getContactUri(
-								     lookupUri);
+    Uri contactUri = contactAccessor.getContactSplit().getContactUri(lookupUri);
     Intent i = new Intent(Intent.ACTION_VIEW);
     i.setData(contactUri);
     startActivity(i);
